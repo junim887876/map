@@ -1,848 +1,695 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Gestão Solar & Imóveis 3D Pro</title>
-
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- MapLibre GL JS CSS & JS (Para mapas 3D/Satélite com suporte a tilt/pitch e relevo) -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Solar & Imóveis 3D</title>
+  
+  <!-- MapLibre GL CSS -->
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Google Font Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-          },
-          colors: {
-            solar: {
-              yellow: '#FBBF24',
-              orange: '#F97316',
-              blue: '#3B82F6',
-              emerald: '#10B981',
-              purple: '#A855F7',
-              dark: '#0B0F19',
-              card: 'rgba(20, 27, 45, 0.92)'
-            }
-          }
-        }
-      }
-    }
-  </script>
-
   <style>
-    body, html {
-      height: 100%;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      font-family: 'Inter', sans-serif;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      background-color: #0b0f19;
-      color: #f8fafc;
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(15, 23, 42, 0.94);
+      --border: rgba(255, 255, 255, 0.12);
+      --usina: #f59e0b;
+      --cliente-proprio: #f59e0b;
+      --cliente-socio: #10b981;
+      --aluguel: #3b82f6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
     }
 
-    #map {
-      height: 100vh;
-      width: 100vw;
-      z-index: 1;
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body, html { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    
+    #map { width: 100%; height: 100%; background: #020617; }
+
+    /* Top Header */
+    .header {
+      position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
+      background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--border);
+      border-radius: 16px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .brand { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; user-select: none; }
+    .brand i { color: var(--usina); }
+    .mode-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: rgba(245,158,11,0.2); color: var(--usina); border: 1px solid rgba(245,158,11,0.4); display: none; }
+
+    /* Map Controls (3D e Lock) */
+    .map-controls {
+      position: absolute; top: 70px; right: 12px; z-index: 1000;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .btn-ctrl {
+      background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border);
+      color: #fff; width: 44px; height: 44px; border-radius: 14px; font-weight: 800; font-size: 13px;
+      display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+    .btn-ctrl.unlocked { border-color: #10b981; color: #10b981; background: rgba(16,185,129,0.15); }
+
+    /* Floating Add Button (+) - Oculto por padrão para visitantes */
+    .btn-add {
+      position: absolute; bottom: 85px; right: 16px; z-index: 1000; width: 58px; height: 58px;
+      border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
+      border: 2px solid rgba(255,255,255,0.25); display: none; align-items: center; justify-content: center; cursor: pointer;
+      box-shadow: 0 10px 25px rgba(37,99,235,0.5);
     }
 
-    /* Modais e Glassmorphism */
-    .glass-panel {
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-    }
-
-    .glass-card {
-      background: rgba(30, 41, 59, 0.85);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 5px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(0,0,0,0.2);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(255,255,255,0.2);
-      border-radius: 4px;
-    }
-
-    /* Custom MapLibre Popups */
-    .maplibregl-popup-content {
-      background: rgba(15, 23, 42, 0.95) !important;
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.15) !important;
-      border-radius: 1rem !important;
-      color: #f8fafc !important;
-      padding: 14px !important;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
-    }
-    .maplibregl-popup-tip {
-      border-top-color: rgba(15, 23, 42, 0.95) !important;
-      border-bottom-color: rgba(15, 23, 42, 0.95) !important;
-    }
-    .maplibregl-popup-close-button {
-      color: #9ca3af !important;
-      font-size: 16px !important;
-      padding: 6px 10px !important;
-    }
-
-    /* Transição do Modal */
-    .sheet-transition {
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    /* Pin Hover Effect */
-    .marker-pin-wrap {
-      cursor: pointer;
-      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.6));
-    }
-    .marker-pin-wrap:hover {
-      transform: scale(1.18);
+    .bottom-bar { position: absolute; bottom: 16px; left: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; pointer-events: none; }
+    .btn-act {
+      flex: 1; pointer-events: auto; background: var(--card-bg); backdrop-filter: blur(16px);
+      border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 14px;
+      font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
     }
 
     /* Crosshair Target */
-    .crosshair-overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 10;
-      pointer-events: none;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
+    .crosshair { position: absolute; inset: 0; z-index: 1500; pointer-events: none; display: none; align-items: center; justify-content: center; flex-direction: column; }
+    .crosshair.active { display: flex; }
+    .crosshair-pin { width: 42px; height: 42px; border: 3px solid #2563eb; border-radius: 50%; background: rgba(37,99,235,0.2); }
+    .crosshair-btn { pointer-events: auto; margin-top: 16px; background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 800; cursor: pointer; }
+
+    /* Modals */
+    .modal { position: fixed; inset: 0; z-index: 2000; background: rgba(2,6,23,0.85); backdrop-filter: blur(12px); display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: 0.25s ease; }
+    .modal.active { opacity: 1; pointer-events: auto; }
+    .card { width: 100%; max-width: 500px; background: #0f172a; border-top-left-radius: 24px; border-top-right-radius: 24px; border: 1px solid var(--border); padding: 22px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: 0.25s ease; }
+    .modal.active .card { transform: translateY(0); }
+    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; display: block; }
+    .form-input, .form-textarea, .form-select { width: 100%; background: #020617; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: #fff; font-size: 14px; outline: none; }
+    .form-row { display: flex; gap: 10px; } .form-row .form-group { flex: 1; }
+
+    .type-selector { display: flex; gap: 6px; margin-bottom: 16px; }
+    .type-btn { flex: 1; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--border); background: #020617; color: var(--text-muted); font-weight: 700; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+    .type-btn.active[data-type="usina"] { background: rgba(245, 158, 11, 0.18); border-color: var(--usina); color: var(--usina); }
+    .type-btn.active[data-type="cliente"] { background: rgba(59, 130, 246, 0.18); border-color: #3b82f6; color: #3b82f6; }
+    .type-btn.active[data-type="aluguel"] { background: rgba(59, 130, 246, 0.18); border-color: var(--aluguel); color: var(--aluguel); }
+
+    .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px; }
+    .btn-danger { width: 100%; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+
+    /* Finance Metrics Card */
+    .fin-card {
+      background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05));
+      border: 1px solid rgba(16,185,129,0.3); border-radius: 16px; padding: 16px; margin-bottom: 14px;
     }
-    .crosshair-overlay.active {
-      display: flex;
-    }
-    .crosshair-pin {
-      width: 44px;
-      height: 44px;
-      border: 3px solid #3b82f6;
-      border-radius: 50%;
-      background: rgba(59, 130, 246, 0.25);
-      box-shadow: 0 0 25px rgba(59, 130, 246, 0.8);
-      transform: translateY(-22px);
-    }
+    .fin-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+    .fin-row.total { border-top: 1px solid var(--border); padding-top: 8px; font-weight: 800; font-size: 16px; color: #10b981; }
+
+    .custom-svg-pin { filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); cursor: pointer; }
+    .list-item { background: #020617; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 h-screen w-screen overflow-hidden flex flex-col relative">
+<body>
+
+  <div id="map"></div>
+
+  <!-- Controles do Mapa (3D e Login) -->
+  <div class="map-controls">
+    <button class="btn-ctrl" id="btn3d">3D</button>
+    <button class="btn-ctrl" id="btnAdminAuth" title="Área do Empresário"><i data-lucide="lock"></i></button>
+  </div>
+
+  <!-- Mira de Precisão -->
+  <div class="crosshair" id="crosshair">
+    <div class="crosshair-pin"></div>
+    <button class="crosshair-btn" id="btnConfirmCrosshair"><i data-lucide="check"></i> Confirmar Ponto Aqui</button>
+  </div>
+
+  <!-- Botão (+) -> Apenas para Empresário Logado -->
+  <button class="btn-add" id="btnToggleCrosshair"><i data-lucide="plus" style="width:28px;height:28px;"></i></button>
 
   <!-- Top Bar -->
-  <header class="absolute top-3 left-3 right-3 z-20 flex justify-between items-center pointer-events-none">
-    <div id="brandBtn" class="glass-panel px-3.5 py-2 rounded-2xl flex items-center space-x-2.5 shadow-xl pointer-events-auto border border-amber-500/20 cursor-pointer active:scale-95 transition">
-      <div class="p-1.5 bg-amber-500/20 rounded-xl text-amber-400">
-        <i data-lucide="sun" class="w-5 h-5"></i>
-      </div>
-      <div>
-        <div class="flex items-center gap-1.5">
-          <h1 class="text-xs font-black tracking-wide uppercase text-slate-200">Solar & Imóveis 3D</h1>
-          <span id="modeBadge" class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30">ADM</span>
-        </div>
-        <p class="text-[9px] text-slate-400 font-medium">Toque 3x na logo para alternar o modo</p>
-      </div>
+  <div class="header">
+    <div class="brand" id="brandBtn">
+      <i data-lucide="sun"></i>
+      <span>Solar & Imóveis</span>
+      <span class="mode-badge" id="modeBadge">ADM</span>
     </div>
-
-    <!-- Botões de Ação Topo -->
-    <div class="flex items-center space-x-2 pointer-events-auto">
-      <button onclick="toggleConfigModal()" class="glass-panel p-2.5 rounded-2xl text-slate-200 hover:text-white active:scale-95 transition shadow-lg border border-white/10 bg-slate-900/90 text-sky-400" title="Configurar Planilha">
-        <i data-lucide="database" class="w-5 h-5"></i>
-      </button>
-
-      <button onclick="toggleStatsModal()" class="glass-panel p-2.5 rounded-2xl text-slate-200 hover:text-white active:scale-95 transition shadow-lg border border-white/10 bg-slate-900/90 text-amber-400" title="Resumo Financeiro">
-        <i data-lucide="pie-chart" class="w-5 h-5"></i>
-      </button>
-    </div>
-  </header>
-
-  <!-- Container do Mapa 3D -->
-  <div id="map" class="w-full h-full"></div>
-
-  <!-- Mira para marcação precisa (Ativada pelo Botão +) -->
-  <div class="crosshair-overlay" id="crosshair">
-    <div class="crosshair-pin"></div>
-    <button onclick="confirmCrosshairLocation()" class="pointer-events-auto mt-4 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 font-black px-6 py-3 rounded-full shadow-2xl transition flex items-center gap-2 text-xs uppercase tracking-wider">
-      <i data-lucide="check-circle" class="w-5 h-5"></i> Confirmar Ponto Aqui
-    </button>
-  </div>
-
-  <!-- Botão Flutuante (+) para Marcar Ponto -->
-  <button id="btnToggleCrosshair" onclick="toggleCrosshairMode()" class="absolute bottom-24 right-4 z-20 w-14 h-14 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-2xl border-2 border-white/30 active:scale-90 transition" title="Marcar Novo Ponto">
-    <i data-lucide="plus" class="w-7 h-7"></i>
-  </button>
-
-  <!-- Controles Flutuantes do Mapa (2D/3D & GPS) -->
-  <div class="absolute right-4 top-20 z-20 flex flex-col space-y-2 pointer-events-auto">
-    <button onclick="toggle3DView()" id="btn3dToggle" class="glass-panel p-3 rounded-2xl text-slate-200 active:scale-90 transition shadow-xl border border-white/10 bg-slate-900/90 text-amber-400 flex items-center justify-center font-black text-xs" title="Alternar Visão 2D / 3D">
-      3D
-    </button>
-    <button onclick="locateUser()" class="glass-panel p-3 rounded-2xl text-slate-200 active:scale-90 transition shadow-xl border border-white/10 bg-slate-900/90 text-sky-400 flex items-center justify-center" title="Minha Posição GPS">
-      <i data-lucide="crosshair" class="w-5 h-5"></i>
-    </button>
-  </div>
-
-  <!-- Bottom Actions Bar -->
-  <div class="absolute bottom-4 left-3 right-3 z-20 flex gap-2 pointer-events-none">
-    <button onclick="toggleDrawer()" class="flex-1 glass-panel py-3.5 px-4 rounded-2xl flex items-center justify-center space-x-2 shadow-2xl border border-white/15 active:scale-98 transition bg-slate-900/90 pointer-events-auto">
-      <i data-lucide="list" class="w-4 h-4 text-amber-400"></i>
-      <span class="text-xs font-bold text-slate-200" id="drawerSummaryText">Pontos Cadastrados</span>
-    </button>
-
-    <button onclick="syncDataFromSheet()" class="glass-panel py-3.5 px-4 rounded-2xl flex items-center justify-center space-x-1.5 shadow-2xl border border-white/15 active:scale-98 transition bg-slate-900/90 text-emerald-400 font-bold text-xs pointer-events-auto" title="Sincronizar com a Planilha">
-      <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-      <span class="hidden sm:inline">Sincronizar</span>
-    </button>
-  </div>
-
-  <!-- Drawer / Lista de Registros -->
-  <div id="drawer" class="fixed inset-x-0 bottom-0 z-30 transform translate-y-full sheet-transition max-h-[80vh] h-auto glass-panel rounded-t-3xl flex flex-col shadow-2xl border-t border-white/20">
-    <div class="w-full py-3 flex justify-center cursor-pointer" onclick="toggleDrawer()">
-      <div class="w-12 h-1.5 bg-slate-600 rounded-full"></div>
-    </div>
-
-    <div class="px-5 pb-3 flex justify-between items-center border-b border-slate-800">
-      <div>
-        <h2 class="text-sm font-black text-white flex items-center gap-2 uppercase tracking-wide">
-          <i data-lucide="map-pin" class="w-4 h-4 text-amber-400"></i> Locais Mapeados
-        </h2>
-        <p class="text-[11px] text-slate-400">Gerencie usinas, clientes e imóveis</p>
-      </div>
-      <button onclick="toggleDrawer()" class="p-1.5 bg-slate-800 rounded-full text-slate-400 hover:text-white">
-        <i data-lucide="x" class="w-4 h-4"></i>
-      </button>
-    </div>
-
-    <!-- Lista com Scroll -->
-    <div id="locationsList" class="flex-1 overflow-y-auto p-4 space-y-2.5 max-h-[50vh]">
-      <!-- Itens renderizados dinamicamente -->
+    <div style="display:flex; gap:6px;">
+      <button class="btn-act" id="btnConfig" style="padding:6px 10px; font-size:11px;"><i data-lucide="link"></i> Planilha</button>
+      <button class="btn-act" id="btnSummary" style="padding:6px 10px; font-size:11px; display:none;"><i data-lucide="pie-chart"></i> Resumo</button>
     </div>
   </div>
 
-  <!-- Modal de Cadastro / Edição -->
-  <div id="modalForm" class="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-md hidden opacity-0 transition-opacity duration-300 p-0 sm:p-4">
-    <div id="modalContent" class="w-full sm:max-w-md glass-panel rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto border-t sm:border border-white/20 shadow-2xl transform translate-y-10 transition-transform duration-300">
-      
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 id="modalTitle" class="text-sm font-black text-white uppercase tracking-wider">Novo Ponto</h3>
-        <button onclick="closeFormModal()" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-full">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
+  <!-- Bottom Actions -->
+  <div class="bottom-bar">
+    <button class="btn-act" id="btnList"><i data-lucide="list"></i> Pontos</button>
+    <button class="btn-act" id="btnSync"><i data-lucide="refresh-cw"></i> Sincronizar</button>
+  </div>
+
+  <!-- Modal de Senha do Empresário -->
+  <div class="modal" id="modalAuth">
+    <div class="card">
+      <div class="card-head">
+        <h3>Área Restrita (Empresário)</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
       </div>
-
-      <form id="pointForm" onsubmit="savePoint(event)" class="space-y-3">
-        <input type="hidden" id="pointId" />
-        <input type="hidden" id="pointLat" />
-        <input type="hidden" id="pointLng" />
-
-        <!-- Seleção do Tipo -->
-        <div>
-          <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1.5">Tipo de Ponto</label>
-          <div class="grid grid-cols-3 gap-1.5">
-            <button type="button" onclick="setType('usina')" id="btnTypeUsina" class="py-2 px-1 rounded-xl border border-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 text-slate-400">
-              <i data-lucide="sun" class="w-3.5 h-3.5"></i> Usina
-            </button>
-            <button type="button" onclick="setType('cliente')" id="btnTypeCliente" class="py-2 px-1 rounded-xl border border-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 text-slate-400">
-              <i data-lucide="zap" class="w-3.5 h-3.5"></i> Cliente
-            </button>
-            <button type="button" onclick="setType('aluguel')" id="btnTypeAluguel" class="py-2 px-1 rounded-xl border border-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 text-slate-400">
-              <i data-lucide="home" class="w-3.5 h-3.5"></i> Aluguel
-            </button>
-          </div>
-        </div>
-
-        <!-- Nome -->
-        <div>
-          <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Nome / Identificação</label>
-          <input type="text" id="pointName" required placeholder="Ex: Usina Solar 01 ou Casa do João" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
-        </div>
-
-        <!-- Propriedade / Sociedade (Apenas Usinas e Casas) -->
-        <div id="groupOwnership">
-          <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Propriedade / Titularidade</label>
-          <select id="pointOwnership" onchange="renderUsinaDropdown()" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 transition">
-            <option value="Proprio">100% Minha (Própria)</option>
-            <option value="Sociedade">Sociedade (Com Sogro)</option>
-          </select>
-        </div>
-
-        <!-- Usina Fornecedora (Apenas Clientes) -->
-        <div id="groupSourceUsina" class="hidden">
-          <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Usina Fornecedora do Crédito</label>
-          <select id="pointSourceUsina" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 transition">
-            <!-- Renderizado dinamicamente -->
-          </select>
-        </div>
-
-        <!-- Zona / Localização (Para Iluminação Pública) -->
-        <div id="groupZone">
-          <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Localização (Taxa de Iluminação Pública)</label>
-          <select id="pointZone" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 transition">
-            <option value="Urbana">Urbana (Taxa de R$ 21,00/mês)</option>
-            <option value="Rural">Zona Rural / Fora da Cidade (Isento R$ 0,00)</option>
-          </select>
-        </div>
-
-        <!-- Geração/Consumo e Valor do Aluguel -->
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label id="lblKwh" class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Geração (kWh/mês)</label>
-            <input type="number" id="pointKwh" min="0" step="any" placeholder="0" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
-          </div>
-          <div>
-            <label id="lblVal" class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Valor Aluguel (R$)</label>
-            <input type="number" id="pointVal" min="0" step="any" placeholder="0" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition">
-          </div>
-        </div>
-
-        <!-- Status de Aluguel (Apenas para Casas) -->
-        <div id="groupRentalStatus" class="hidden">
-          <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Status da Casa</label>
-          <select id="pointStatus" class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:outline-none focus:border-amber-500 transition">
-            <option value="Alugada">Alugada</option>
-            <option value="Disponível">Disponível para Alugar</option>
-            <option value="Manutenção">Em Reforma / Manutenção</option>
-          </select>
-        </div>
-
-        <!-- Observações -->
-        <div>
-          <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">Observações Rápidas</label>
-          <textarea id="pointNotes" rows="2" placeholder="UC, vencimento, detalhes..." class="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition resize-none"></textarea>
-        </div>
-
-        <div class="pt-2 flex gap-2">
-          <button type="button" onclick="closeFormModal()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition">Cancelar</button>
-          <button type="submit" class="flex-1 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-amber-500/20">Salvar Ponto</button>
-        </div>
-        <button type="button" id="btnDeletePoint" onclick="deleteCurrentPoint()" class="hidden w-full py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-bold rounded-xl text-xs transition">Excluir Ponto</button>
-      </form>
+      <div class="form-group">
+        <label class="form-label">Digite sua Senha de Acesso</label>
+        <input type="password" class="form-input" id="adminPasswordInput" placeholder="Sua senha...">
+      </div>
+      <button class="btn-main" id="btnCheckAuth">Acessar Modo Empresário</button>
     </div>
   </div>
 
-  <!-- Modal Configuração da Planilha -->
-  <div id="modalConfig" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md hidden opacity-0 transition-opacity duration-300 p-4">
-    <div class="w-full max-w-sm glass-panel rounded-3xl p-5 space-y-4 border border-white/20 shadow-2xl">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
-          <i data-lucide="database" class="w-4 h-4 text-sky-400"></i> Google Planilhas
-        </h3>
-        <button onclick="toggleConfigModal()" class="p-1 bg-slate-800 text-slate-400 rounded-full">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
+  <!-- Modal de Leitura para Visitante (Sem Dados Financeiros) -->
+  <div class="modal" id="modalPublicView">
+    <div class="card">
+      <div class="card-head">
+        <h3 id="pubTitle">Detalhes do Ponto</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
       </div>
-
-      <div>
-        <label class="block text-[11px] font-extrabold text-slate-400 uppercase mb-1">URL do Apps Script (Web App)</label>
-        <input type="text" id="sheetUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500 transition">
+      <div style="background:#020617; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px;">
+        <div style="font-size:12px; color:var(--text-muted); font-weight:800; text-transform:uppercase;" id="pubTypeLabel">INFORMAÇÃO</div>
+        <div style="font-size:20px; font-weight:800; margin-top:4px; color:#fff;" id="pubName">-</div>
+        <div style="font-size:15px; font-weight:700; margin-top:8px; color:var(--usina);" id="pubKwh">0 kWh/mês</div>
       </div>
-
-      <button onclick="saveConfigUrl()" class="w-full py-3 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black rounded-xl text-xs transition shadow-lg shadow-sky-500/20">
-        Salvar Conexão
-      </button>
     </div>
   </div>
 
-  <!-- Modal Resumo Financeiro & Balanço -->
-  <div id="modalStats" class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md hidden opacity-0 transition-opacity duration-300 p-4">
-    <div class="w-full max-w-md glass-panel rounded-3xl p-5 space-y-4 border border-white/20 shadow-2xl max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 class="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
-          <i data-lucide="pie-chart" class="w-4 h-4 text-amber-400"></i> Dashboard do Empresário
-        </h3>
-        <button onclick="toggleStatsModal()" class="p-1 bg-slate-800 text-slate-400 rounded-full">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
+  <!-- Form Modal (Exclusivo para Edição do Empresário) -->
+  <div class="modal" id="modalForm">
+    <div class="card">
+      <div class="card-head">
+        <h3 id="formTitle">Novo Cadastro</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
       </div>
 
-      <!-- Métricas Financeiras Consolidadas -->
-      <div class="grid grid-cols-2 gap-2.5">
-        <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl">
-          <p class="text-[10px] uppercase font-bold text-emerald-400">Faturamento Bruto</p>
-          <p id="statFatTotal" class="text-lg font-black text-white mt-1">R$ 0,00</p>
-          <p class="text-[10px] text-slate-400">Energia + Aluguel</p>
+      <div class="type-selector">
+        <div class="type-btn active" data-type="usina"><i data-lucide="sun"></i> Usina</div>
+        <div class="type-btn" data-type="cliente"><i data-lucide="zap"></i> Cliente</div>
+        <div class="type-btn" data-type="aluguel"><i data-lucide="home"></i> Aluguel</div>
+      </div>
+
+      <input type="hidden" id="pointId"><input type="hidden" id="pointLat"><input type="hidden" id="pointLng">
+
+      <div class="form-group">
+        <label class="form-label">Nome do Ponto / Cliente</label>
+        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina Matriz ou Casa do João">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Localização da Casa / Ponto</label>
+        <select class="form-select" id="pointLocationType">
+          <option value="urbana">Urbana (Com Iluminação Pública - R$ 21,00)</option>
+          <option value="rural">Fora da Cidade / Rural (Sem Iluminação Pública)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="ownershipGroup">
+        <label class="form-label">Titularidade / Propriedade</label>
+        <select class="form-select" id="pointOwnership">
+          <option value="Proprio">100% Minha Usina / Casa</option>
+          <option value="Sociedade">Sociedade (Com Sócio/Sogro)</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="usinaSourceGroup" style="display:none;">
+        <label class="form-label">Usina Fornecedora da Energia</label>
+        <select class="form-select" id="pointSourceUsina">
+          <option value="">Selecione a Usina...</option>
+        </select>
+      </div>
+
+      <div class="fin-card" id="financeCalcCard" style="display:none;">
+        <div style="font-weight:800; font-size:12px; color:#10b981; margin-bottom:8px; text-transform:uppercase;">📊 Demonstrativo Financeiro</div>
+        <div class="fin-row"><span>Faturamento Bruto:</span> <strong id="calcBruto">R$ 0,00</strong></div>
+        <div class="fin-row"><span>Custo Produção (0,17/kWh):</span> <strong id="calcCustoProd">R$ 0,00</strong></div>
+        <div class="fin-row"><span>Iluminação Pública:</span> <strong id="calcIlum">R$ 0,00</strong></div>
+        <div class="fin-row total"><span>Lucro Líquido Estimado:</span> <strong id="calcLucro">R$ 0,00</strong></div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" id="lblKwh">kWh / Mês</label>
+          <input type="number" class="form-input" id="pointKwh" placeholder="0">
         </div>
-        <div class="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl">
-          <p class="text-[10px] uppercase font-bold text-amber-400">Lucro Líquido Solar</p>
-          <p id="statLucroTotal" class="text-lg font-black text-white mt-1">R$ 0,00</p>
-          <p class="text-[10px] text-slate-400">Livre de custos</p>
+        <div class="form-group">
+          <label class="form-label" id="lblVal">Desconto (%) / Aluguel (R$)</label>
+          <input type="number" class="form-input" id="pointVal" value="20">
         </div>
       </div>
 
-      <div id="statsUsinaDetails" class="space-y-2">
-        <!-- Renderizado dinamicamente -->
+      <div class="form-group" id="rentalStatusGroup" style="display:none;">
+        <label class="form-label">Status do Imóvel</label>
+        <select class="form-select" id="pointStatus">
+          <option value="Alugada">Alugada</option>
+          <option value="Disponível">Disponível</option>
+          <option value="Manutenção">Em Reforma</option>
+        </select>
       </div>
 
-      <button onclick="toggleStatsModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition">
-        Fechar
-      </button>
+      <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea class="form-textarea" id="pointNotes" rows="2" placeholder="UC, telefone, detalhes..."></textarea>
+      </div>
+
+      <button class="btn-main" id="btnSavePoint">Salvar na Planilha</button>
+      <button class="btn-danger" id="btnDeletePoint" style="display:none;">Excluir Ponto</button>
     </div>
   </div>
+
+  <!-- Pop-up Exclusivo do Modo GESTÃO (Empresário Logado) -->
+  <div class="modal" id="modalGestaoView">
+    <div class="card">
+      <div class="card-head">
+        <h3 id="gestaoClientName">Faturamento do Cliente</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
+      </div>
+
+      <div class="fin-card">
+        <div style="font-weight:800; font-size:12px; color:#10b981; margin-bottom:12px; text-transform:uppercase;">💼 MENSALIDADE E RENTABILIDADE</div>
+        <div class="fin-row"><span>Consumo Cadastrado:</span> <strong id="gConsumo">0 kWh/mês</strong></div>
+        <div class="fin-row"><span>Usina Fornecedora:</span> <strong id="gUsina">-</strong></div>
+        <div class="fin-row"><span>Localização:</span> <strong id="gLocal">Urbana</strong></div>
+        <hr style="border:0; border-top:1px solid var(--border); margin:10px 0;">
+        <div class="fin-row"><span>Faturamento Bruto (R$ 0,648/kWh):</span> <strong id="gBruto" style="color:#3b82f6;">R$ 0,00</strong></div>
+        <div class="fin-row"><span>Custo Produção (R$ 0,17/kWh):</span> <strong id="gCustoProd" style="color:#ef4444;">R$ 0,00</strong></div>
+        <div class="fin-row"><span>Iluminação Pública:</span> <strong id="gIlum" style="color:#ef4444;">R$ 0,00</strong></div>
+        <div class="fin-row total"><span>LUCRO LÍQUIDO MENSAL:</span> <strong id="gLucro">R$ 0,00</strong></div>
+      </div>
+
+      <button class="btn-act" id="btnGestaoEditDirect" style="width:100%;"><i data-lucide="edit-3"></i> Editar Informações / kWh</button>
+    </div>
+  </div>
+
+  <!-- Modal Config Google Sheets -->
+  <div class="modal" id="modalConfig">
+    <div class="card">
+      <div class="card-head">
+        <h3>Sincronizar Google Planilha</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cole a URL da sua Planilha (Apps Script)</label>
+        <input type="text" class="form-input" id="sheetUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <button class="btn-main" id="btnSaveConfig">Carregar Dados</button>
+    </div>
+  </div>
+
+  <!-- Modal Lista -->
+  <div class="modal" id="modalList">
+    <div class="card">
+      <div class="card-head">
+        <h3>Pontos Cadastrados</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
+      </div>
+      <div id="pointsContainer"></div>
+    </div>
+  </div>
+
+  <!-- Modal Resumo Empresarial -->
+  <div class="modal" id="modalSummary">
+    <div class="card">
+      <div class="card-head">
+        <h3>Balanço Energético e Lucratividade</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
+      </div>
+      <div id="summaryContent"></div>
+    </div>
+  </div>
+
+  <!-- MapLibre GL JS -->
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
   <script>
-    // Parâmetros Financeiros Fixos do Negócio
-    const TARIFA_KWH_PUBLICO = 0.81; // R$ 0,81
-    const DESCONTO_FIXO = 0.20;      // 20%
-    const COBRANCA_KWH_CLIENTE = TARIFA_KWH_PUBLICO * (1 - DESCONTO_FIXO); // R$ 0,648 / kWh
-    const CUSTO_KWH_PRODUCAO = 0.17;  // R$ 0,17 / kWh
-    const ILUMINACAO_PUBLICA_URBANA = 21.00; // R$ 21,00/mês
+    // ========================================================
+    // 🔑 SENHA DO EMPRESÁRIO (ALTERE AQUI SE DESEJAR A SUA SENHA)
+    // ========================================================
+    const ADMIN_PASSWORD = "1234";
 
-    // Estados da Aplicação
-    let map;
-    let points = [];
-    let scriptUrl = localStorage.getItem('solar_sheet_url_v3') || '';
+    let points = JSON.parse(localStorage.getItem('solar_db') || '[]');
+    let scriptUrl = localStorage.getItem('solar_sheet_url') || '';
     let currentType = 'usina';
-    let appModeIndex = 0; // 0: ADM, 1: GESTAO, 2: DEMO
-    const appModes = ['ADM', 'GESTAO', 'DEMO'];
-    let is3D = false;
-    let crosshairActive = false;
+    let isAdminUnlocked = false; // Começa bloqueado para visitantes
+    let currentModeIndex = 0; // 0: ADM, 1: GESTÃO, 2: DEMO
+    const modes = ['ADM', 'GESTÃO', 'DEMO'];
+    let activeMarkers = [];
+    let activePointForGestao = null;
+    let is3d = false;
 
-    // Inicialização da Aplicação
-    window.onload = function() {
-      lucide.createIcons();
-      loadLocalPoints();
-      initMap();
-      setupBrandClick();
+    // Estilo de Satélite Limpo
+    const cleanSatelliteStyle = {
+      version: 8,
+      sources: {
+        'raster-tiles': {
+          type: 'raster',
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256
+        }
+      },
+      layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', minzoom: 0, maxzoom: 20 }]
     };
 
-    function initMap() {
-      // MapLibre GL com tiles de satélite
-      map = new maplibregl.Map({
-        container: 'map',
-        style: {
-          version: 8,
-          sources: {
-            'raster-tiles': {
-              type: 'raster',
-              tiles: ['https://mt1.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}'],
-              tileSize: 256
-            }
-          },
-          layers: [{
-            id: 'simple-tiles',
-            type: 'raster',
-            source: 'raster-tiles',
-            minzoom: 0,
-            maxzoom: 22
-          }]
-        },
-        center: [-49.1179, -15.3181], // Coordenadas Padrão
-        zoom: 14,
-        pitch: 0,
-        bearing: 0
-      });
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: cleanSatelliteStyle,
+      center: [-49.1179, -15.3181],
+      zoom: 14,
+      pitch: 0,
+      bearing: 0
+    });
 
-      map.on('load', () => {
+    lucide.createIcons();
+
+    // Controle 3D
+    document.getElementById('btn3d').addEventListener('click', () => {
+      is3d = !is3d;
+      map.easeTo({ pitch: is3d ? 60 : 0, bearing: is3d ? -20 : 0, duration: 1000 });
+      document.getElementById('btn3d').style.background = is3d ? '#2563eb' : 'var(--card-bg)';
+    });
+
+    // Login do Empresário
+    document.getElementById('btnAdminAuth').addEventListener('click', () => {
+      if (isAdminUnlocked) {
+        alert('Modo Empresário já está ativo!');
+        return;
+      }
+      document.getElementById('modalAuth').classList.add('active');
+    });
+
+    document.getElementById('btnCheckAuth').addEventListener('click', () => {
+      const pwd = document.getElementById('adminPasswordInput').value;
+      if (pwd === ADMIN_PASSWORD) {
+        isAdminUnlocked = true;
+        closeModals();
+        alert('Acesso Empresário Concedido!');
+        
+        // Ativa os controles restritos
+        document.getElementById('modeBadge').style.display = 'inline-block';
+        document.getElementById('btnSummary').style.display = 'flex';
+        document.getElementById('btnToggleCrosshair').style.display = 'flex';
+        
+        const btnAuth = document.getElementById('btnAdminAuth');
+        btnAuth.classList.add('unlocked');
+        btnAuth.innerHTML = '<i data-lucide="unlock"></i>';
+        lucide.createIcons();
+
         renderMarkers();
-      });
+      } else {
+        alert('Senha incorreta!');
+      }
+    });
 
-      // Clique simples no mapa para abrir o formulário
-      map.on('click', (e) => {
-        if (!crosshairActive) {
-          openFormModal(e.lngLat.lat, e.lngLat.lng);
-        }
-      });
+    // Alternar Modos (Apenas com Admin Desbloqueado)
+    let brandClicks = 0;
+    document.getElementById('brandBtn').addEventListener('click', () => {
+      if (!isAdminUnlocked) return; // Visitante não alterna modos
+
+      brandClicks++;
+      if (brandClicks >= 3) {
+        currentModeIndex = (currentModeIndex + 1) % modes.length;
+        brandClicks = 0;
+        const currentMode = modes[currentModeIndex];
+        document.getElementById('modeBadge').innerText = currentMode;
+        
+        if(currentMode === 'DEMO') document.getElementById('modeBadge').style.color = '#10b981';
+        else if(currentMode === 'GESTÃO') document.getElementById('modeBadge').style.color = '#3b82f6';
+        else document.getElementById('modeBadge').style.color = 'var(--usina)';
+
+        renderMarkers();
+      }
+    });
+
+    function computeFinances(kwh, isUrbana) {
+      const tarifaEmpresario = 0.81 * 0.80; // R$ 0.648 / kWh
+      const faturamentoBruto = kwh * tarifaEmpresario;
+      const custoProducao = kwh * 0.17;
+      const custoIluminacao = isUrbana ? 21.00 : 0.00;
+      const custoTotal = custoProducao + custoIluminacao;
+      const lucroLiquido = faturamentoBruto - custoTotal;
+
+      return { faturamentoBruto, custoProducao, custoIluminacao, custoTotal, lucroLiquido };
     }
 
-    function calculateClientFinance(kwh, isRural) {
-      const faturamento = kwh * COBRANCA_KWH_CLIENTE;
-      const ilumPublica = isRural ? 0 : ILUMINACAO_PUBLICA_URBANA;
-      const custoProducao = kwh * CUSTO_KWH_PRODUCAO;
-      const custoTotal = custoProducao + ilumPublica;
-      const lucroLiquido = faturamento - custoTotal;
-      const margem = faturamento > 0 ? (lucroLiquido / faturamento) * 100 : 0;
-
-      return { faturamento, custoProducao, ilumPublica, custoTotal, lucroLiquido, margem };
-    }
-
-    function createMarkerSVG(point) {
-      let pinColor = '#FBBF24'; // Amarelo Padrão
-      let iconInner = '';
-      let badgeText = '';
+    function createPinElement(point) {
+      let pinColor = '#f59e0b';
+      let iconSvg = '';
 
       if (point.type === 'usina') {
-        pinColor = point.ownership === 'Sociedade' ? '#D97706' : '#F59E0B';
-        iconInner = `<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>`;
-        badgeText = point.ownership === 'Sociedade' ? 'SOC' : 'EU';
+        pinColor = '#f59e0b';
+        iconSvg = '<path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M18.364 18.364l-1.414-1.414M7.05 7.05L5.636 5.636M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
       } else if (point.type === 'aluguel') {
-        pinColor = '#3B82F6'; // Casa de Aluguel SEMPRE Azul
-        iconInner = `<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>`;
-        badgeText = 'ALUG';
+        pinColor = '#3b82f6';
+        iconSvg = '<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1m-6 0h6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
       } else if (point.type === 'cliente') {
-        iconInner = `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`;
-        
-        // Identifica Usina Fornecedora
-        const sourceUsina = points.find(p => p.type === 'usina' && p.name === point.sourceUsina);
-        if (sourceUsina) {
-          if (sourceUsina.ownership === 'Sociedade') {
-            pinColor = '#10B981'; // Verde = Usina do Sócio (Sogro)
-            badgeText = 'SOC';
-          } else {
-            pinColor = '#FBBF24'; // Amarelo = Minha Usina Própria
-            badgeText = 'EU';
-          }
+        iconSvg = '<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
+        const sourceUsinaObj = points.find(p => p.type === 'usina' && p.name === point.sourceUsina);
+        if (sourceUsinaObj) {
+          pinColor = sourceUsinaObj.ownership === 'Sociedade' ? '#10b981' : '#f59e0b';
         } else {
-          pinColor = '#3B82F6'; // Azul = Não vinculado
-          badgeText = 'SOL';
+          pinColor = '#3b82f6';
         }
       }
 
       const el = document.createElement('div');
-      el.className = 'marker-pin-wrap';
+      el.className = 'custom-svg-pin';
       el.innerHTML = `
-        <div style="position: relative; width: 40px; height: 50px;">
-          <svg width="40" height="50" viewBox="0 0 38 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 0C8.506 0 0 8.506 0 19C0 31.4 19 48 19 48C19 48 38 31.4 38 19C38 8.506 29.494 0 19 0Z" fill="${pinColor}" />
-            <circle cx="19" cy="18" r="13" fill="#0B0F19" />
-            <g transform="translate(7, 6)" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
-              ${iconInner}
-            </g>
-          </svg>
-          <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #0B0F19; color: ${pinColor}; border: 1px solid ${pinColor}; font-size: 8px; font-weight: 900; padding: 1px 4px; border-radius: 6px; white-space: nowrap;">
-            ${badgeText}
-          </div>
-        </div>
+        <svg width="38" height="48" viewBox="0 0 38 48" fill="none">
+          <path d="M19 0C8.506 0 0 8.506 0 19C0 31.4 19 48 19 48C19 48 38 31.4 38 19C38 8.506 29.494 0 19 0Z" fill="${pinColor}" />
+          <circle cx="19" cy="18" r="12" fill="#0f172a" />
+          <g transform="translate(7, 6) scale(0.9)">
+            ${iconSvg}
+          </g>
+        </svg>
       `;
+
       return el;
     }
 
-    let currentMarkers = [];
-
     function renderMarkers() {
-      currentMarkers.forEach(m => m.remove());
-      currentMarkers = [];
+      activeMarkers.forEach(m => m.remove());
+      activeMarkers = [];
 
-      const currentMode = appModes[appModeIndex];
+      const currentMode = modes[currentModeIndex];
 
-      points.forEach(pt => {
-        // Modo DEMO esconde casas de aluguel
-        if (currentMode === 'DEMO' && pt.type === 'aluguel') return;
+      points.forEach(p => {
+        if (currentMode === 'DEMO' && p.type === 'aluguel') return;
 
-        const el = createMarkerSVG(pt);
+        const el = createPinElement(p);
         const marker = new maplibregl.Marker({ element: el })
-          .setLngLat([pt.lng, pt.lat])
+          .setLngLat([p.lng, p.lat])
           .addTo(map);
 
-        // Configuração do Popup no Clique
-        const popupContent = buildPopupHTML(pt, currentMode);
-        const popup = new maplibregl.Popup({ offset: 25 }).setHTML(popupContent);
-        marker.setPopup(popup);
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
 
-        currentMarkers.push(marker);
-      });
-
-      renderLocationList();
-      updateDrawerSummary();
-    }
-
-    function buildPopupHTML(pt, mode) {
-      const isUsina = pt.type === 'usina';
-      const isAluguel = pt.type === 'aluguel';
-      const isCliente = pt.type === 'cliente';
-      const isRural = pt.zone === 'Rural';
-
-      let headerBadge = '';
-      if (isUsina) headerBadge = `<span class="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Usina Solar (${pt.ownership === 'Sociedade' ? 'Sócio' : 'Própria'})</span>`;
-      else if (isAluguel) headerBadge = `<span class="bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Casa Aluguel</span>`;
-      else headerBadge = `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-extrabold px-2 py-0.5 rounded-full">Cliente Consumidor</span>`;
-
-      let financeHTML = '';
-
-      if (isCliente) {
-        const fin = calculateClientFinance(pt.kwh || 0, isRural);
-
-        if (mode === 'GESTAO' || mode === 'ADM') {
-          financeHTML = `
-            <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1 text-xs">
-              <div class="flex justify-between">
-                <span class="text-slate-400">Consumo:</span>
-                <span class="font-bold text-slate-200">${pt.kwh || 0} kWh/mês</span>
-              </div>
-              <div class="flex justify-between text-emerald-400">
-                <span>Faturamento:</span>
-                <span class="font-black">R$ ${fin.faturamento.toFixed(2)}</span>
-              </div>
-              <div class="flex justify-between text-slate-400">
-                <span>Custo Produção:</span>
-                <span>R$ ${fin.custoProducao.toFixed(2)}</span>
-              </div>
-              <div class="flex justify-between text-slate-400">
-                <span>Ilum. Pública (${isRural ? 'Rural' : 'Urbana'}):</span>
-                <span>R$ ${fin.ilumPublica.toFixed(2)}</span>
-              </div>
-              <div class="border-t border-slate-800 pt-1 flex justify-between text-amber-400 font-extrabold text-sm">
-                <span>LUCRO LÍQUIDO:</span>
-                <span>R$ ${fin.lucroLiquido.toFixed(2)} /mês</span>
-              </div>
-            </div>
-          `;
-        } else {
-          // Modo DEMO para Clientes
-          financeHTML = `
-            <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1 text-xs">
-              <div class="flex justify-between">
-                <span class="text-slate-400">Consumo Atendido:</span>
-                <span class="font-bold text-slate-200">${pt.kwh || 0} kWh/mês</span>
-              </div>
-              <div class="flex justify-between text-amber-400">
-                <span>Desconto Aplicado:</span>
-                <span class="font-bold">20% Fixo</span>
-              </div>
-            </div>
-          `;
-        }
-      } else if (isAluguel) {
-        financeHTML = `
-          <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1 text-xs">
-            <div class="flex justify-between">
-              <span class="text-slate-400">Valor do Aluguel:</span>
-              <span class="font-black text-sky-400">R$ ${(pt.val || 0).toFixed(2)} /mês</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-slate-400">Status:</span>
-              <span class="font-bold text-slate-200">${pt.status || 'Alugada'}</span>
-            </div>
-          </div>
-        `;
-      } else if (isUsina) {
-        financeHTML = `
-          <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 space-y-1 text-xs">
-            <div class="flex justify-between">
-              <span class="text-slate-400">Geração Média:</span>
-              <span class="font-black text-amber-400">${pt.kwh || 0} kWh/mês</span>
-            </div>
-          </div>
-        `;
-      }
-
-      return `
-        <div class="p-1 space-y-2 min-w-[210px]">
-          <div class="flex justify-between items-center">${headerBadge}</div>
-          <div>
-            <h4 class="font-black text-sm text-white">${escapeHtml(pt.name)}</h4>
-            ${pt.sourceUsina ? `<p class="text-[10px] text-slate-400">Usina: ${escapeHtml(pt.sourceUsina)}</p>` : ''}
-          </div>
-          ${financeHTML}
-          ${pt.notes ? `<p class="text-[10px] text-slate-300 italic bg-slate-900/50 p-1.5 rounded-lg border border-slate-800">${escapeHtml(pt.notes)}</p>` : ''}
-          <div class="pt-1 flex space-x-1.5">
-            <button onclick="openFormModal(${pt.lat}, ${pt.lng}, '${pt.id}')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold rounded-lg text-center">
-              Editar
-            </button>
-            <button onclick="openGoogleMapsRoute(${pt.lat}, ${pt.lng})" class="py-1.5 px-2.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-[11px] font-bold rounded-lg">
-              GPS Rota
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    function setupBrandClick() {
-      let clicks = 0;
-      let timer = null;
-      const brandBtn = document.getElementById('brandBtn');
-
-      brandBtn.addEventListener('click', () => {
-        clicks++;
-        if (timer) clearTimeout(timer);
-
-        timer = setTimeout(() => {
-          if (clicks >= 3) {
-            appModeIndex = (appModeIndex + 1) % appModes.length;
-            const newMode = appModes[appModeIndex];
-            
-            const badge = document.getElementById('modeBadge');
-            badge.innerText = newMode;
-            
-            if (newMode === 'ADM') badge.className = 'text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-400 border border-amber-500/30';
-            else if (newMode === 'GESTAO') badge.className = 'text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
-            else badge.className = 'text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-sky-500/20 text-sky-400 border border-sky-500/30';
-
-            renderMarkers();
+          if (!isAdminUnlocked) {
+            // MODO VISITANTE: Mostra apenas nome e kWh (Zero financeiro)
+            openPublicView(p);
+          } else if (currentMode === 'GESTÃO' && p.type === 'cliente') {
+            // MODO GESTÃO: Pop-up de Faturamento
+            openGestaoView(p);
+          } else {
+            // MODO ADM: Edição
+            openEditForm(p.id);
           }
-          clicks = 0;
-        }, 400);
+        });
+
+        activeMarkers.push(marker);
       });
+
+      updateUsinaDropdown();
+    }
+
+    function openPublicView(p) {
+      document.getElementById('pubTitle').innerText = p.name;
+      document.getElementById('pubName').innerText = p.name;
+      document.getElementById('pubTypeLabel').innerText = p.type === 'usina' ? 'Usina Solar (Geração)' : (p.type === 'cliente' ? 'Cliente Solar (Consumo)' : 'Casa de Aluguel');
+      document.getElementById('pubKwh').innerText = `${p.kwh || 0} kWh / mês`;
+      document.getElementById('modalPublicView').classList.add('active');
+    }
+
+    function openGestaoView(p) {
+      activePointForGestao = p;
+      const isUrbana = p.locationType !== 'rural';
+      const fin = computeFinances(p.kwh || 0, isUrbana);
+
+      document.getElementById('gestaoClientName').innerText = p.name;
+      document.getElementById('gConsumo').innerText = `${p.kwh || 0} kWh/mês`;
+      document.getElementById('gUsina').innerText = p.sourceUsina || 'Não vinculada';
+      document.getElementById('gLocal').innerText = isUrbana ? 'Urbana (R$ 21,00/mês)' : 'Fora da Cidade (Isento)';
+      
+      document.getElementById('gBruto').innerText = `R$ ${fin.faturamentoBruto.toFixed(2)}`;
+      document.getElementById('gCustoProd').innerText = `R$ ${fin.custoProducao.toFixed(2)}`;
+      document.getElementById('gIlum').innerText = `R$ ${fin.custoIluminacao.toFixed(2)}`;
+      document.getElementById('gLucro').innerText = `R$ ${fin.lucroLiquido.toFixed(2)}`;
+
+      document.getElementById('modalGestaoView').classList.add('active');
+    }
+
+    document.getElementById('btnGestaoEditDirect').addEventListener('click', () => {
+      closeModals();
+      if (activePointForGestao) {
+        openEditForm(activePointForGestao.id);
+      }
+    });
+
+    function updateUsinaDropdown() {
+      const select = document.getElementById('pointSourceUsina');
+      select.innerHTML = '<option value="">Selecione a Usina...</option>';
+      points.filter(p => p.type === 'usina').forEach(u => {
+        select.innerHTML += `<option value="${u.name}">${u.name} (${u.ownership === 'Sociedade' ? 'Usina Sócio' : 'Minha Usina'})</option>`;
+      });
+    }
+
+    map.on('click', (e) => {
+      if (isAdminUnlocked) {
+        openNewForm(e.lngLat.lat, e.lngLat.lng);
+      }
+    });
+
+    document.getElementById('btnToggleCrosshair').addEventListener('click', () => {
+      document.getElementById('crosshair').classList.toggle('active');
+    });
+
+    document.getElementById('btnConfirmCrosshair').addEventListener('click', () => {
+      const center = map.getCenter();
+      document.getElementById('crosshair').classList.remove('active');
+      openNewForm(center.lat, center.lng);
+    });
+
+    function openNewForm(lat, lng) {
+      document.getElementById('pointId').value = '';
+      document.getElementById('pointLat').value = lat;
+      document.getElementById('pointLng').value = lng;
+      document.getElementById('pointName').value = '';
+      document.getElementById('pointKwh').value = '';
+      document.getElementById('pointVal').value = '20';
+      document.getElementById('pointNotes').value = '';
+      document.getElementById('formTitle').innerText = 'Novo Cadastro';
+      document.getElementById('btnDeletePoint').style.display = 'none';
+      setType('usina');
+      document.getElementById('modalForm').classList.add('active');
+    }
+
+    function openEditForm(id) {
+      const p = points.find(item => item.id.toString() === id.toString());
+      if (!p) return;
+      document.getElementById('pointId').value = p.id;
+      document.getElementById('pointLat').value = p.lat;
+      document.getElementById('pointLng').value = p.lng;
+      document.getElementById('pointName').value = p.name;
+      document.getElementById('pointKwh').value = p.kwh || '';
+      document.getElementById('pointVal').value = p.val || '20';
+      document.getElementById('pointNotes').value = p.notes || '';
+      document.getElementById('pointOwnership').value = p.ownership || 'Proprio';
+      document.getElementById('pointSourceUsina').value = p.sourceUsina || '';
+      document.getElementById('pointLocationType').value = p.locationType || 'urbana';
+
+      document.getElementById('formTitle').innerText = 'Editar Ponto';
+      document.getElementById('btnDeletePoint').style.display = 'block';
+
+      setType(p.type);
+      updateFinanceDisplay();
+      document.getElementById('modalForm').classList.add('active');
     }
 
     function setType(type) {
       currentType = type;
-      const btnUsina = document.getElementById('btnTypeUsina');
-      const btnCliente = document.getElementById('btnTypeCliente');
-      const btnAluguel = document.getElementById('btnTypeAluguel');
+      document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+      
+      const rentalGrp = document.getElementById('rentalStatusGroup');
+      const usinaSourceGrp = document.getElementById('usinaSourceGroup');
+      const ownershipGrp = document.getElementById('ownershipGroup');
+      const finCard = document.getElementById('financeCalcCard');
 
-      btnUsina.className = type === 'usina' ? 'py-2 px-1 rounded-xl border border-amber-500 bg-amber-500/10 text-[11px] font-bold flex items-center justify-center gap-1 text-amber-400' : 'py-2 px-1 rounded-xl border border-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 text-slate-400';
-      btnCliente.className = type === 'cliente' ? 'py-2 px-1 rounded-xl border border-emerald-500 bg-emerald-500/10 text-[11px] font-bold flex items-center justify-center gap-1 text-emerald-400' : 'py-2 px-1 rounded-xl border border-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 text-slate-400';
-      btnAluguel.className = type === 'aluguel' ? 'py-2 px-1 rounded-xl border border-sky-500 bg-sky-500/10 text-[11px] font-bold flex items-center justify-center gap-1 text-sky-400' : 'py-2 px-1 rounded-xl border border-slate-700 text-[11px] font-bold flex items-center justify-center gap-1 text-slate-400';
-
-      const groupOwnership = document.getElementById('groupOwnership');
-      const groupSourceUsina = document.getElementById('groupSourceUsina');
-      const groupRentalStatus = document.getElementById('groupRentalStatus');
-
-      if (type === 'aluguel') {
-        groupOwnership.classList.remove('hidden');
-        groupSourceUsina.classList.add('hidden');
-        groupRentalStatus.classList.remove('hidden');
-        document.getElementById('lblKwh').innerText = 'Consumo Média (kWh)';
-        document.getElementById('lblVal').innerText = 'Valor Aluguel (R$)';
-      } else if (type === 'cliente') {
-        groupOwnership.classList.add('hidden');
-        groupSourceUsina.classList.remove('hidden');
-        groupRentalStatus.classList.add('hidden');
-        document.getElementById('lblKwh').innerText = 'Consumo (kWh/mês)';
-        document.getElementById('lblVal').innerText = 'Desconto (%) [20%]';
-      } else { // Usina
-        groupOwnership.classList.remove('hidden');
-        groupSourceUsina.classList.add('hidden');
-        groupRentalStatus.classList.add('hidden');
-        document.getElementById('lblKwh').innerText = 'Geração (kWh/mês)';
-        document.getElementById('lblVal').innerText = 'Custo Produção R$/kWh';
-      }
-
-      renderUsinaDropdown();
-    }
-
-    function renderUsinaDropdown() {
-      const select = document.getElementById('pointSourceUsina');
-      select.innerHTML = '<option value="">Selecione a Usina...</option>';
-      points.filter(p => p.type === 'usina').forEach(u => {
-        select.innerHTML += `<option value="${escapeHtml(u.name)}">${escapeHtml(u.name)} (${u.ownership === 'Sociedade' ? 'Sócio' : 'Própria'})</option>`;
-      });
-    }
-
-    function openFormModal(lat, lng, editId = null) {
-      const modal = document.getElementById('modalForm');
-      const content = document.getElementById('modalContent');
-
-      document.getElementById('pointId').value = editId || '';
-      document.getElementById('pointLat').value = lat;
-      document.getElementById('pointLng').value = lng;
-
-      if (editId) {
-        const pt = points.find(p => p.id.toString() === editId.toString());
-        if (pt) {
-          document.getElementById('modalTitle').innerText = 'Editar Ponto';
-          document.getElementById('pointName').value = pt.name || '';
-          document.getElementById('pointOwnership').value = pt.ownership || 'Proprio';
-          document.getElementById('pointZone').value = pt.zone || 'Urbana';
-          document.getElementById('pointKwh').value = pt.kwh || '';
-          document.getElementById('pointVal').value = pt.val || '';
-          document.getElementById('pointStatus').value = pt.status || 'Alugada';
-          document.getElementById('pointNotes').value = pt.notes || '';
-          setType(pt.type);
-          if (pt.sourceUsina) document.getElementById('pointSourceUsina').value = pt.sourceUsina;
-          document.getElementById('btnDeletePoint').classList.remove('hidden');
-        }
+      if(type === 'aluguel') {
+        rentalGrp.style.display = 'block';
+        usinaSourceGrp.style.display = 'none';
+        ownershipGrp.style.display = 'block';
+        finCard.style.display = 'none';
+      } else if(type === 'cliente') {
+        rentalGrp.style.display = 'none';
+        usinaSourceGrp.style.display = 'block';
+        ownershipGrp.style.display = 'none';
+        finCard.style.display = 'block';
       } else {
-        document.getElementById('modalTitle').innerText = 'Novo Ponto';
-        document.getElementById('pointForm').reset();
-        setType('usina');
-        document.getElementById('btnDeletePoint').classList.add('hidden');
+        rentalGrp.style.display = 'none';
+        usinaSourceGrp.style.display = 'none';
+        ownershipGrp.style.display = 'block';
+        finCard.style.display = 'none';
       }
-
-      modal.classList.remove('hidden');
-      setTimeout(() => {
-        modal.classList.remove('opacity-0');
-        content.classList.remove('translate-y-10');
-      }, 10);
     }
 
-    function closeFormModal() {
-      const modal = document.getElementById('modalForm');
-      const content = document.getElementById('modalContent');
-      modal.classList.add('opacity-0');
-      content.classList.add('translate-y-10');
-      setTimeout(() => modal.classList.add('hidden'), 300);
-    }
-
-    async function savePoint(e) {
-      e.preventDefault();
-
-      const id = document.getElementById('pointId').value || 'pt_' + Date.now();
-      const lat = parseFloat(document.getElementById('pointLat').value);
-      const lng = parseFloat(document.getElementById('pointLng').value);
-      const name = document.getElementById('pointName').value;
-      const ownership = document.getElementById('pointOwnership').value;
-      const sourceUsina = document.getElementById('pointSourceUsina').value;
-      const zone = document.getElementById('pointZone').value;
+    function updateFinanceDisplay() {
       const kwh = parseFloat(document.getElementById('pointKwh').value) || 0;
-      const val = parseFloat(document.getElementById('pointVal').value) || 0;
-      const status = document.getElementById('pointStatus').value;
-      const notes = document.getElementById('pointNotes').value;
+      const isUrbana = document.getElementById('pointLocationType').value !== 'rural';
+      const fin = computeFinances(kwh, isUrbana);
 
-      const item = { id, lat, lng, type: currentType, name, ownership, sourceUsina, zone, kwh, val, status, notes };
+      document.getElementById('calcBruto').innerText = `R$ ${fin.faturamentoBruto.toFixed(2)}`;
+      document.getElementById('calcCustoProd').innerText = `R$ ${fin.custoProducao.toFixed(2)}`;
+      document.getElementById('calcIlum').innerText = `R$ ${fin.custoIluminacao.toFixed(2)}`;
+      document.getElementById('calcLucro').innerText = `R$ ${fin.lucroLiquido.toFixed(2)}`;
+    }
 
-      const existingIdx = points.findIndex(p => p.id.toString() === id.toString());
-      if (existingIdx >= 0) points[existingIdx] = item;
-      else points.push(item);
+    document.getElementById('pointKwh').addEventListener('input', updateFinanceDisplay);
+    document.getElementById('pointLocationType').addEventListener('change', updateFinanceDisplay);
+    document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
 
-      saveLocalPoints();
+    // Operações de Cadastro com Planilha
+    document.getElementById('btnSavePoint').addEventListener('click', async () => {
+      const id = document.getElementById('pointId').value || Date.now().toString();
+      const item = {
+        id,
+        lat: parseFloat(document.getElementById('pointLat').value),
+        lng: parseFloat(document.getElementById('pointLng').value),
+        type: currentType,
+        name: document.getElementById('pointName').value || 'Novo Ponto',
+        kwh: parseFloat(document.getElementById('pointKwh').value) || 0,
+        val: parseFloat(document.getElementById('pointVal').value) || 0,
+        ownership: document.getElementById('pointOwnership').value,
+        sourceUsina: document.getElementById('pointSourceUsina').value,
+        status: document.getElementById('pointStatus').value,
+        locationType: document.getElementById('pointLocationType').value,
+        notes: document.getElementById('pointNotes').value
+      };
+
+      const idx = points.findIndex(p => p.id.toString() === id.toString());
+      if (idx >= 0) points[idx] = item; else points.push(item);
+
+      localStorage.setItem('solar_db', JSON.stringify(points));
       renderMarkers();
-      closeFormModal();
+      closeModals();
 
       if (scriptUrl) {
-        try {
-          await fetch(scriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'create', data: item })
-          });
-        } catch (err) {
-          console.error("Erro ao enviar para planilha", err);
-        }
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', data: item })
+        });
       }
-    }
+    });
 
-    async function deleteCurrentPoint() {
+    document.getElementById('btnDeletePoint').addEventListener('click', async () => {
       const id = document.getElementById('pointId').value;
-      if (confirm("Excluir realmente este ponto?")) {
-        points = points.filter(p => p.id.toString() !== id.toString());
-        saveLocalPoints();
-        renderMarkers();
-        closeFormModal();
+      points = points.filter(p => p.id.toString() !== id.toString());
+      localStorage.setItem('solar_db', JSON.stringify(points));
+      renderMarkers();
+      closeModals();
 
-        if (scriptUrl) {
-          try {
-            await fetch(scriptUrl, {
-              method: 'POST',
-              mode: 'no-cors',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'delete', data: { id } })
-            });
-          } catch (err) {
-            console.error("Erro ao excluir na planilha", err);
-          }
-        }
+      if (scriptUrl) {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', data: { id } })
+        });
       }
-    }
+    });
 
-    async function syncDataFromSheet() {
+    // Botão Sincronizar (Funciona para todos)
+    document.getElementById('btnSync').addEventListener('click', async () => {
       if (!scriptUrl) {
-        toggleConfigModal();
+        document.getElementById('modalConfig').classList.add('active');
         return;
       }
       try {
@@ -850,202 +697,106 @@
         const data = await res.json();
         if (Array.isArray(data)) {
           points = data;
-          saveLocalPoints();
+          localStorage.setItem('solar_db', JSON.stringify(points));
           renderMarkers();
-          alert("Dados sincronizados com sucesso da Planilha!");
+          alert('Dados carregados da planilha!');
         }
-      } catch (err) {
-        alert("Erro ao sincronizar da planilha. Verifique a URL do App Script.");
+      } catch (e) {
+        alert('Erro ao carregar da planilha. Verifique a URL do Script.');
       }
+    });
+
+    document.getElementById('btnConfig').addEventListener('click', () => {
+      document.getElementById('sheetUrl').value = scriptUrl;
+      document.getElementById('modalConfig').classList.add('active');
+    });
+
+    document.getElementById('btnSaveConfig').addEventListener('click', async () => {
+      scriptUrl = document.getElementById('sheetUrl').value.trim();
+      localStorage.setItem('solar_sheet_url', scriptUrl);
+      closeModals();
+      
+      if (scriptUrl) {
+        document.getElementById('btnSync').click();
+      }
+    });
+
+    function updateStats() {
+      let ownGen = 0, socGen = 0, ownCons = 0, socCons = 0, totalLucro = 0;
+
+      points.forEach(p => {
+        if (p.type === 'usina') {
+          if (p.ownership === 'Sociedade') socGen += p.kwh;
+          else ownGen += p.kwh;
+        }
+        if (p.type === 'cliente') {
+          const u = points.find(item => item.type === 'usina' && item.name === p.sourceUsina);
+          if (u && u.ownership === 'Sociedade') socCons += p.kwh;
+          else ownCons += p.kwh;
+
+          const fin = computeFinances(p.kwh || 0, p.locationType !== 'rural');
+          totalLucro += fin.lucroLiquido;
+        }
+      });
+
+      document.getElementById('summaryContent').innerHTML = `
+        <div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:14px; border-radius:14px; margin-bottom:12px;">
+          <div style="font-size:11px; font-weight:800; color:#10b981;">LUCRO LÍQUIDO TOTAL MENSAL</div>
+          <div style="font-size:24px; font-weight:900; margin-top:2px;">R$ ${totalLucro.toFixed(2)}</div>
+        </div>
+
+        <div style="background:rgba(245,158,11,0.12); border:1px solid #f59e0b; padding:12px; border-radius:12px; margin-bottom:10px;">
+          <div style="font-size:11px; font-weight:800; color:#f59e0b;">MINHA USINA (PRÓPRIA)</div>
+          <div>Geração: ${ownGen.toLocaleString()} kWh/mês</div>
+          <div>Consumo Clientes: ${ownCons.toLocaleString()} kWh/mês</div>
+          <div style="font-weight:700;">Saldo: ${(ownGen - ownCons).toLocaleString()} kWh/mês</div>
+        </div>
+
+        <div style="background:rgba(59,130,246,0.12); border:1px solid #3b82f6; padding:12px; border-radius:12px;">
+          <div style="font-size:11px; font-weight:800; color:#3b82f6;">USINA EM SOCIEDADE (SÓCIO)</div>
+          <div>Geração: ${socGen.toLocaleString()} kWh/mês</div>
+          <div>Consumo Clientes: ${socCons.toLocaleString()} kWh/mês</div>
+          <div style="font-weight:700;">Saldo Sociedade: ${(socGen - socCons).toLocaleString()} kWh/mês</div>
+        </div>
+      `;
     }
 
-    function loadLocalPoints() {
-      const saved = localStorage.getItem('solar_app_3d_points');
-      if (saved) {
-        try { points = JSON.parse(saved); } catch(e) { points = []; }
-      }
-    }
+    function renderList() {
+      const container = document.getElementById('pointsContainer');
+      container.innerHTML = '';
+      points.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        
+        let color = '#f59e0b';
+        if (p.type === 'aluguel') color = '#3b82f6';
+        if (p.type === 'cliente') {
+          const u = points.find(item => item.type === 'usina' && item.name === p.sourceUsina);
+          color = (u && u.ownership === 'Sociedade') ? '#10b981' : '#f59e0b';
+        }
 
-    function saveLocalPoints() {
-      localStorage.setItem('solar_app_3d_points', JSON.stringify(points));
-    }
-
-    function renderLocationList() {
-      const container = document.getElementById('locationsList');
-      const currentMode = appModes[appModeIndex];
-
-      const visible = points.filter(pt => !(currentMode === 'DEMO' && pt.type === 'aluguel'));
-
-      if (visible.length === 0) {
-        container.innerHTML = `<div class="py-6 text-center text-slate-500 text-xs">Nenhum ponto marcado.</div>`;
-        return;
-      }
-
-      container.innerHTML = visible.map(pt => {
-        const isUsina = pt.type === 'usina';
-        const isAluguel = pt.type === 'aluguel';
-        const colorClass = isUsina ? 'text-amber-400' : (isAluguel ? 'text-sky-400' : 'text-emerald-400');
-        const iconName = isUsina ? 'sun' : (isAluguel ? 'home' : 'zap');
-
-        return `
-          <div onclick="centerMapOnPoint(${pt.lat}, ${pt.lng})" class="bg-slate-900/80 border border-slate-800 p-3 rounded-2xl flex items-center justify-between cursor-pointer active:scale-98 transition">
-            <div class="flex items-center space-x-3">
-              <div class="p-2 bg-slate-800 rounded-xl ${colorClass}">
-                <i data-lucide="${iconName}" class="w-4 h-4"></i>
-              </div>
-              <div>
-                <h4 class="text-xs font-bold text-white">${escapeHtml(pt.name)}</h4>
-                <p class="text-[10px] text-slate-400">${pt.kwh ? pt.kwh + ' kWh/mês' : ''} ${pt.val ? '• R$ ' + pt.val : ''}</p>
-              </div>
-            </div>
-            <button onclick="event.stopPropagation(); openFormModal(${pt.lat}, ${pt.lng}, '${pt.id}')" class="p-2 text-slate-400 hover:text-white">
-              <i data-lucide="edit-2" class="w-4 h-4"></i>
-            </button>
+        item.innerHTML = `
+          <div>
+            <div style="font-weight:800; font-size:14px; color:${color};">${p.name}</div>
+            <div style="font-size:12px; color:var(--text-muted);">${p.kwh} kWh/mês ${p.sourceUsina ? `| Usina: ${p.sourceUsina}` : ''}</div>
           </div>
+          <button class="btn-act" style="padding:6px 12px; font-size:12px;">Ver</button>
         `;
-      }).join('');
-
+        item.addEventListener('click', () => { 
+          map.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: is3d ? 60 : 0 });
+          closeModals(); 
+        });
+        container.appendChild(item);
+      });
       lucide.createIcons();
     }
 
-    function updateDrawerSummary() {
-      const usinas = points.filter(p => p.type === 'usina').length;
-      const clientes = points.filter(p => p.type === 'cliente').length;
-      const alugueis = points.filter(p => p.type === 'aluguel').length;
-      document.getElementById('drawerSummaryText').innerText = `${points.length} Pontos (${usinas} Usinas, ${clientes} Clientes, ${alugueis} Aluguéis)`;
-    }
+    function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
+    document.getElementById('btnList').addEventListener('click', () => { renderList(); document.getElementById('modalList').classList.add('active'); });
+    document.getElementById('btnSummary').addEventListener('click', () => { updateStats(); document.getElementById('modalSummary').classList.add('active'); });
 
-    function toggleStatsModal() {
-      const modal = document.getElementById('modalStats');
-      const isHidden = modal.classList.contains('hidden');
-
-      if (isHidden) {
-        calculateBusinessStats();
-        modal.classList.remove('hidden');
-        setTimeout(() => modal.classList.remove('opacity-0'), 10);
-      } else {
-        modal.classList.add('opacity-0');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-      }
-    }
-
-    function calculateBusinessStats() {
-      let fatSolar = 0;
-      let lucroSolar = 0;
-      let fatAluguel = 0;
-
-      const usinas = points.filter(p => p.type === 'usina');
-      const containerDetails = document.getElementById('statsUsinaDetails');
-      containerDetails.innerHTML = '';
-
-      usinas.forEach(u => {
-        const clientesDaUsina = points.filter(p => p.type === 'cliente' && p.sourceUsina === u.name);
-        const kwhGerado = u.kwh || 0;
-        const kwhConsumido = clientesDaUsina.reduce((acc, c) => acc + (c.kwh || 0), 0);
-        const saldoKwh = kwhGerado - kwhConsumido;
-
-        let uLucro = 0;
-        clientesDaUsina.forEach(c => {
-          const fin = calculateClientFinance(c.kwh || 0, c.zone === 'Rural');
-          fatSolar += fin.faturamento;
-          lucroSolar += fin.lucroLiquido;
-          uLucro += fin.lucroLiquido;
-        });
-
-        containerDetails.innerHTML += `
-          <div class="bg-slate-900/90 border border-slate-800 p-3 rounded-2xl space-y-1">
-            <div class="flex justify-between items-center text-xs">
-              <span class="font-extrabold text-amber-400">${escapeHtml(u.name)} (${u.ownership === 'Sociedade' ? 'Sócio' : 'Própria'})</span>
-              <span class="font-bold ${saldoKwh >= 0 ? 'text-emerald-400' : 'text-red-400'}">${saldoKwh} kWh Saldo</span>
-            </div>
-            <div class="flex justify-between text-[11px] text-slate-400">
-              <span>Clientes Atendidos: ${clientesDaUsina.length}</span>
-              <span class="text-slate-200 font-bold">Lucro: R$ ${uLucro.toFixed(2)}</span>
-            </div>
-          </div>
-        `;
-      });
-
-      points.filter(p => p.type === 'aluguel').forEach(a => {
-        fatAluguel += (a.val || 0);
-      });
-
-      document.getElementById('statFatTotal').innerText = `R$ ${(fatSolar + fatAluguel).toFixed(2)}`;
-      document.getElementById('statLucroTotal').innerText = `R$ ${lucroSolar.toFixed(2)}`;
-    }
-
-    function toggle3DView() {
-      is3D = !is3D;
-      const btn = document.getElementById('btn3dToggle');
-
-      if (is3D) {
-        map.easeTo({ pitch: 60, bearing: -20, duration: 1000 });
-        btn.className = 'glass-panel p-3 rounded-2xl text-slate-200 active:scale-90 transition shadow-xl border border-white/10 bg-amber-500 text-slate-950 font-black text-xs';
-      } else {
-        map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
-        btn.className = 'glass-panel p-3 rounded-2xl text-slate-200 active:scale-90 transition shadow-xl border border-white/10 bg-slate-900/90 text-amber-400 font-black text-xs';
-      }
-    }
-
-    function toggleCrosshairMode() {
-      crosshairActive = !crosshairActive;
-      const crosshairEl = document.getElementById('crosshair');
-      if (crosshairActive) crosshairEl.classList.add('active');
-      else crosshairEl.classList.remove('active');
-    }
-
-    function confirmCrosshairLocation() {
-      const center = map.getCenter();
-      toggleCrosshairMode();
-      openFormModal(center.lat, center.lng);
-    }
-
-    function centerMapOnPoint(lat, lng) {
-      map.flyTo({ center: [lng, lat], zoom: 17, pitch: is3D ? 60 : 0 });
-      toggleDrawer();
-    }
-
-    function locateUser() {
-      if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(p => {
-          map.flyTo({ center: [p.coords.longitude, p.coords.latitude], zoom: 16 });
-        });
-      }
-    }
-
-    function openGoogleMapsRoute(lat, lng) {
-      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
-    }
-
-    function toggleDrawer() {
-      const drawer = document.getElementById('drawer');
-      drawer.classList.toggle('translate-y-full');
-    }
-
-    function toggleConfigModal() {
-      const modal = document.getElementById('modalConfig');
-      const isHidden = modal.classList.contains('hidden');
-      if (isHidden) {
-        document.getElementById('sheetUrlInput').value = scriptUrl;
-        modal.classList.remove('hidden');
-        setTimeout(() => modal.classList.remove('opacity-0'), 10);
-      } else {
-        modal.classList.add('opacity-0');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-      }
-    }
-
-    function saveConfigUrl() {
-      scriptUrl = document.getElementById('sheetUrlInput').value.trim();
-      localStorage.setItem('solar_sheet_url_v3', scriptUrl);
-      toggleConfigModal();
-      alert('URL da Planilha salva!');
-    }
-
-    function escapeHtml(str) {
-      if (!str) return '';
-      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
+    // Inicia carregando os marcadores limpos
+    renderMarkers();
   </script>
 </body>
 </html>
