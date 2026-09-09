@@ -3,100 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Sistema Solar & Imóveis</title>
+  <title>Gestão Solar & Sociedade</title>
   
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.92);
+      --bg: #0b0f19;
+      --card-bg: rgba(20, 27, 45, 0.94);
       --border: rgba(255, 255, 255, 0.12);
       --usina: #f59e0b;
-      --cliente: #3b82f6;
-      --aluguel: #10b981;
+      --cliente-proprio: #f59e0b; /* Amarelo se recebe da sua usina */
+      --cliente-socio: #10b981;   /* Verde se recebe do sócio */
+      --aluguel: #3b82f6;          /* Casa de aluguel SEMPRE Azul */
       --text: #f8fafc;
       --text-muted: #94a3b8;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body, html { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    body, html { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
     #map { width: 100%; height: 100%; background: #020617; }
-    .leaflet-tile { filter: brightness(0.85) contrast(1.1) hue-rotate(190deg) invert(0.9) saturate(0.8); }
+    .leaflet-tile { filter: brightness(0.8) contrast(1.2) hue-rotate(190deg) invert(0.9) saturate(0.8); }
 
-    /* Top Bar */
     .header {
       position: absolute; top: 12px; left: 12px; right: 12px; z-index: 1000;
-      background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border);
-      border-radius: 14px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--border);
+      border-radius: 16px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
     }
-    .brand { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+    .brand { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
     .brand i { color: var(--usina); }
-    .mode-badge { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.1); margin-left: 4px; }
+    .mode-badge { font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 8px; background: rgba(255,255,255,0.1); margin-left: 4px; color: var(--usina); border: 1px solid rgba(245,158,11,0.3); }
 
-    /* Floating Controls */
     .btn-add {
-      position: absolute; bottom: 80px; right: 16px; z-index: 1000; width: 56px; height: 56px;
+      position: absolute; bottom: 85px; right: 16px; z-index: 1000; width: 58px; height: 58px;
       border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
-      border: 2px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; cursor: pointer;
+      border: 2px solid rgba(255,255,255,0.25); display: flex; align-items: center; justify-content: center; cursor: pointer;
+      box-shadow: 0 10px 25px rgba(37,99,235,0.5);
     }
-    .bottom-bar {
-      position: absolute; bottom: 16px; left: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; pointer-events: none;
-    }
+
+    .bottom-bar { position: absolute; bottom: 16px; left: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; pointer-events: none; }
     .btn-act {
-      flex: 1; pointer-events: auto; background: var(--card-bg); backdrop-filter: blur(12px);
-      border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 12px;
+      flex: 1; pointer-events: auto; background: var(--card-bg); backdrop-filter: blur(16px);
+      border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 14px;
       font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
     }
 
-    /* Crosshair Target */
-    .crosshair {
-      position: absolute; inset: 0; z-index: 1500; pointer-events: none; display: none;
-      align-items: center; justify-content: center; flex-direction: column;
-    }
+    .crosshair { position: absolute; inset: 0; z-index: 1500; pointer-events: none; display: none; align-items: center; justify-content: center; flex-direction: column; }
     .crosshair.active { display: flex; }
-    .crosshair-pin { width: 36px; height: 36px; border: 3px solid #2563eb; border-radius: 50%; background: rgba(37,99,235,0.2); }
-    .crosshair-btn { pointer-events: auto; margin-top: 16px; background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: 700; cursor: pointer; }
+    .crosshair-pin { width: 42px; height: 42px; border: 3px solid #2563eb; border-radius: 50%; background: rgba(37,99,235,0.2); }
+    .crosshair-btn { pointer-events: auto; margin-top: 16px; background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 800; cursor: pointer; }
 
-    /* Modals */
-    .modal {
-      position: fixed; inset: 0; z-index: 2000; background: rgba(2,6,23,0.8); backdrop-filter: blur(8px);
-      display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: 0.2s ease;
-    }
+    .modal { position: fixed; inset: 0; z-index: 2000; background: rgba(2,6,23,0.8); backdrop-filter: blur(10px); display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: 0.25s ease; }
     .modal.active { opacity: 1; pointer-events: auto; }
-    .card {
-      width: 100%; max-width: 480px; background: #1e293b; border-top-left-radius: 20px; border-top-right-radius: 20px;
-      border: 1px solid var(--border); padding: 20px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: 0.2s ease;
-    }
+    .card { width: 100%; max-width: 500px; background: #151c2e; border-top-left-radius: 24px; border-top-right-radius: 24px; border: 1px solid var(--border); padding: 22px; max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: 0.25s ease; }
     .modal.active .card { transform: translateY(0); }
-    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
 
-    .form-group { margin-bottom: 12px; }
-    .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 4px; display: block; }
-    .form-input, .form-textarea, .form-select {
-      width: 100%; background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; color: #fff; font-size: 14px; outline: none;
-    }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; display: block; }
+    .form-input, .form-textarea, .form-select { width: 100%; background: #0b0f19; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: #fff; font-size: 14px; outline: none; }
     .form-row { display: flex; gap: 10px; } .form-row .form-group { flex: 1; }
 
-    .type-selector { display: flex; gap: 8px; margin-bottom: 14px; }
-    .type-btn {
-      flex: 1; padding: 10px; border-radius: 10px; border: 1px solid var(--border); background: #0f172a;
-      color: var(--text-muted); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
-    }
-    .type-btn.active[data-type="usina"] { background: rgba(245, 158, 11, 0.2); border-color: var(--usina); color: var(--usina); }
-    .type-btn.active[data-type="cliente"] { background: rgba(59, 130, 246, 0.2); border-color: var(--cliente); color: var(--cliente); }
-    .type-btn.active[data-type="aluguel"] { background: rgba(16, 185, 129, 0.2); border-color: var(--aluguel); color: var(--aluguel); }
+    .type-selector { display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; }
+    .type-btn { flex: 1; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--border); background: #0b0f19; color: var(--text-muted); font-weight: 700; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; white-space: nowrap; }
+    .type-btn.active[data-type="usina"] { background: rgba(245, 158, 11, 0.18); border-color: var(--usina); color: var(--usina); }
+    .type-btn.active[data-type="cliente"] { background: rgba(59, 130, 246, 0.18); border-color: #3b82f6; color: #3b82f6; }
+    .type-btn.active[data-type="aluguel"] { background: rgba(59, 130, 246, 0.18); border-color: var(--aluguel); color: var(--aluguel); }
 
-    .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 6px; }
-    .btn-danger { width: 100%; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px; border-radius: 10px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+    .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px; }
+    .btn-danger { width: 100%; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 8px; }
 
-    /* Custom Pins */
-    .custom-pin { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
-    .custom-pin.usina { background: linear-gradient(135deg, #f59e0b, #d97706); }
-    .custom-pin.cliente { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-    .custom-pin.aluguel { background: linear-gradient(135deg, #10b981, #047857); }
-    .list-item { background: #0f172a; border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .svg-pin-wrap { filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+    .list-item { background: #0b0f19; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -109,9 +88,9 @@
     <button class="crosshair-btn" id="btnConfirmCrosshair"><i data-lucide="check"></i> Confirmar Ponto Aqui</button>
   </div>
 
-  <button class="btn-add" id="btnToggleCrosshair"><i data-lucide="plus" style="width:26px;height:26px;"></i></button>
+  <button class="btn-add" id="btnToggleCrosshair"><i data-lucide="plus" style="width:28px;height:28px;"></i></button>
 
-  <!-- Top Bar (Toque triplo/longo na marca ativa/desativa modo oculto) -->
+  <!-- Top Bar -->
   <div class="header">
     <div class="brand" id="brandBtn">
       <i data-lucide="sun"></i>
@@ -119,7 +98,7 @@
       <span class="mode-badge" id="modeBadge">ADM</span>
     </div>
     <div style="display:flex; gap:6px;">
-      <button class="btn-act" id="btnExport" style="padding:6px 10px; font-size:11px;"><i data-lucide="download"></i> Backup .txt</button>
+      <button class="btn-act" id="btnConfig" style="padding:6px 10px; font-size:11px;"><i data-lucide="database"></i> Planilha</button>
       <button class="btn-act" id="btnSummary" style="padding:6px 10px; font-size:11px;"><i data-lucide="pie-chart"></i> Resumo</button>
     </div>
   </div>
@@ -127,7 +106,7 @@
   <!-- Bottom Actions -->
   <div class="bottom-bar">
     <button class="btn-act" id="btnList"><i data-lucide="list"></i> Pontos</button>
-    <button class="btn-act" id="btnLocate"><i data-lucide="navigation"></i> Meu GPS</button>
+    <button class="btn-act" id="btnSync"><i data-lucide="refresh-cw"></i> Sincronizar</button>
   </div>
 
   <!-- Form Modal -->
@@ -147,8 +126,25 @@
       <input type="hidden" id="pointId"><input type="hidden" id="pointLat"><input type="hidden" id="pointLng">
 
       <div class="form-group">
-        <label class="form-label">Nome / Identificação</label>
-        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina Solar 01 ou Casa R. das Flores">
+        <label class="form-label">Nome do Ponto</label>
+        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina Solar 01 ou Casa do João">
+      </div>
+
+      <!-- Campo de Propriedade (Apenas para Usinas e Casas) -->
+      <div class="form-group" id="ownershipGroup">
+        <label class="form-label">Titularidade / Propriedade</label>
+        <select class="form-select" id="pointOwnership">
+          <option value="Proprio">100% Meu</option>
+          <option value="Sociedade">Sociedade (Com Sócio)</option>
+        </select>
+      </div>
+
+      <!-- Usina de Origem para Clientes que Recebem Energia -->
+      <div class="form-group" id="usinaSourceGroup" style="display:none;">
+        <label class="form-label">Usina Fornecedora da Energia</label>
+        <select class="form-select" id="pointSourceUsina">
+          <option value="">Selecione a Usina...</option>
+        </select>
       </div>
 
       <div class="form-row">
@@ -173,11 +169,26 @@
 
       <div class="form-group">
         <label class="form-label">Observações</label>
-        <textarea class="form-textarea" id="pointNotes" rows="2" placeholder="Nº da UC, vencimentos, dados do inquilino..."></textarea>
+        <textarea class="form-textarea" id="pointNotes" rows="2" placeholder="Notas, contrato, vencimentos..."></textarea>
       </div>
 
-      <button class="btn-main" id="btnSavePoint">Salvar Ponto</button>
-      <button class="btn-danger" id="btnDeletePoint" style="display:none;">Excluir</button>
+      <button class="btn-main" id="btnSavePoint">Salvar na Planilha</button>
+      <button class="btn-danger" id="btnDeletePoint" style="display:none;">Excluir Ponto</button>
+    </div>
+  </div>
+
+  <!-- Modal Config Google Sheets -->
+  <div class="modal" id="modalConfig">
+    <div class="card">
+      <div class="card-head">
+        <h3>Conexão Google Planilhas</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
+      </div>
+      <div class="form-group">
+        <label class="form-label">URL do Web App Apps Script</label>
+        <input type="text" class="form-input" id="sheetUrl" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <button class="btn-main" id="btnSaveConfig">Salvar Conexão</button>
     </div>
   </div>
 
@@ -185,7 +196,7 @@
   <div class="modal" id="modalList">
     <div class="card">
       <div class="card-head">
-        <h3>Lista de Locais</h3>
+        <h3>Pontos Mapeados</h3>
         <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
       </div>
       <div id="pointsContainer"></div>
@@ -196,23 +207,10 @@
   <div class="modal" id="modalSummary">
     <div class="card">
       <div class="card-head">
-        <h3>Resumo Geral</h3>
+        <h3>Balanço e Divisão</h3>
         <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
       </div>
-      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;">
-        <div style="background:rgba(245,158,11,0.1); border:1px solid var(--usina); padding:10px; border-radius:10px;">
-          <div style="font-size:10px; color:var(--usina); font-weight:700;">GERAÇÃO</div>
-          <div style="font-size:16px; font-weight:800;" id="stGen">0 kWh</div>
-        </div>
-        <div style="background:rgba(59,130,246,0.1); border:1px solid var(--cliente); padding:10px; border-radius:10px;">
-          <div style="font-size:10px; color:var(--cliente); font-weight:700;">CONSUMO CLIENTES</div>
-          <div style="font-size:16px; font-weight:800;" id="stCons">0 kWh</div>
-        </div>
-      </div>
-      <div style="background:rgba(16,185,129,0.1); border:1px solid var(--aluguel); padding:10px; border-radius:10px; margin-bottom:12px;">
-        <div style="font-size:10px; color:var(--aluguel); font-weight:700;">CASAS DE ALUGUEL</div>
-        <div style="font-size:16px; font-weight:800;" id="stRent">0 Imóveis</div>
-      </div>
+      <div id="summaryContent"></div>
     </div>
   </div>
 
@@ -220,15 +218,16 @@
 
   <script>
     let points = JSON.parse(localStorage.getItem('solar_db') || '[]');
+    let scriptUrl = localStorage.getItem('solar_sheet_url') || '';
     let currentType = 'usina';
-    let isOwnerMode = true; // Alterna pelo clique no topo
+    let isOwnerMode = true;
     let activeMarkers = {};
 
     const map = L.map('map', { zoomControl: false }).setView([-15.3181, -49.1179], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
     lucide.createIcons();
 
-    // Botão Secreto no Título (Alterna entre Modo Admin e Modo Vendas/Cliente)
+    // Modo Vendas/Oculto (3 Clicks no Topo)
     let brandClicks = 0;
     document.getElementById('brandBtn').addEventListener('click', () => {
       brandClicks++;
@@ -236,18 +235,53 @@
         isOwnerMode = !isOwnerMode;
         brandClicks = 0;
         document.getElementById('modeBadge').innerText = isOwnerMode ? 'ADM' : 'DEMO';
-        document.getElementById('modeBadge').style.background = isOwnerMode ? 'rgba(255,255,255,0.1)' : '#10b981';
         renderMarkers();
       }
     });
 
-    function createPinIcon(type) {
-      const icons = { usina: 'sun', cliente: 'zap', aluguel: 'home' };
-      return L.divIcon({
-        className: 'pin-wrap',
-        html: `<div class="custom-pin ${type}"><i data-lucide="${icons[type]}" style="width:16px;height:16px;color:#fff"></i></div>`,
-        iconSize: [34, 34], iconAnchor: [17, 17]
-      });
+    // Gerador de Ícones Personalizados
+    function createCustomPin(point) {
+      let pinColor = '#f59e0b'; // Amarelo padrão
+      let iconSvg = '';
+
+      if (point.type === 'usina') {
+        // Usina = Ícone de Sol
+        pinColor = '#f59e0b'; // Amarelo
+        iconSvg = '<path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M18.364 18.364l-1.414-1.414M7.05 7.05L5.636 5.636M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+      } else if (point.type === 'aluguel') {
+        // Casa de Aluguel = Ícone de Casa AZUL
+        pinColor = '#3b82f6'; // Azul
+        iconSvg = '<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+      } else if (point.type === 'cliente') {
+        // Recebedor de Energia = Ícone de Raio
+        iconSvg = '<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+        
+        // Descobre se a usina fornecedora é própria ou do sócio
+        const sourceUsinaObj = points.find(p => p.type === 'usina' && p.name === point.sourceUsina);
+        if (sourceUsinaObj) {
+          if (sourceUsinaObj.ownership === 'Sociedade') {
+            pinColor = '#10b981'; // Verde se a usina for do SÓCIO
+          } else {
+            pinColor = '#f59e0b'; // Amarelo se a usina for MINHA
+          }
+        } else {
+          pinColor = '#3b82f6'; // Azul caso não tenha selecionado a usina ainda
+        }
+      }
+
+      const svg = `
+        <div class="svg-pin-wrap">
+          <svg width="38" height="48" viewBox="0 0 38 48" fill="none">
+            <path d="M19 0C8.506 0 0 8.506 0 19C0 31.4 19 48 19 48C19 48 38 31.4 38 19C38 8.506 29.494 0 19 0Z" fill="${pinColor}" />
+            <circle cx="19" cy="18" r="13" fill="#0f172a" />
+            <g transform="translate(7, 6) scale(0.9)">
+              ${iconSvg}
+            </g>
+          </svg>
+        </div>
+      `;
+
+      return L.divIcon({ className: 'custom-svg-icon', html: svg, iconSize: [38, 48], iconAnchor: [19, 48] });
     }
 
     function renderMarkers() {
@@ -255,21 +289,26 @@
       activeMarkers = {};
 
       points.forEach(p => {
-        // No Modo Demo/Vendas, esconde casas de aluguel se quiser apresentar só energia
         if (!isOwnerMode && p.type === 'aluguel') return;
-
-        const marker = L.marker([p.lat, p.lng], { icon: createPinIcon(p.type) }).addTo(map);
+        const marker = L.marker([p.lat, p.lng], { icon: createCustomPin(p) }).addTo(map);
         marker.on('click', () => openEditForm(p.id));
         activeMarkers[p.id] = marker;
       });
 
       lucide.createIcons();
-      updateStats();
+      updateUsinaDropdown();
+    }
+
+    function updateUsinaDropdown() {
+      const select = document.getElementById('pointSourceUsina');
+      select.innerHTML = '<option value="">Selecione a Usina...</option>';
+      points.filter(p => p.type === 'usina').forEach(u => {
+        select.innerHTML += `<option value="${u.name}">${u.name} (${u.ownership === 'Sociedade' ? 'Usina Sócio' : 'Minha Usina'})</option>`;
+      });
     }
 
     map.on('click', (e) => openNewForm(e.latlng.lat, e.latlng.lng));
 
-    // Controls
     document.getElementById('btnToggleCrosshair').addEventListener('click', () => {
       document.getElementById('crosshair').classList.toggle('active');
     });
@@ -288,14 +327,14 @@
       document.getElementById('pointKwh').value = '';
       document.getElementById('pointVal').value = '';
       document.getElementById('pointNotes').value = '';
-      document.getElementById('formTitle').innerText = 'Novo Ponto';
+      document.getElementById('formTitle').innerText = 'Novo Cadastro';
       document.getElementById('btnDeletePoint').style.display = 'none';
       setType('usina');
       document.getElementById('modalForm').classList.add('active');
     }
 
     function openEditForm(id) {
-      const p = points.find(item => item.id === id);
+      const p = points.find(item => item.id.toString() === id.toString());
       if (!p) return;
       document.getElementById('pointId').value = p.id;
       document.getElementById('pointLat').value = p.lat;
@@ -304,10 +343,12 @@
       document.getElementById('pointKwh').value = p.kwh || '';
       document.getElementById('pointVal').value = p.val || '';
       document.getElementById('pointNotes').value = p.notes || '';
-      if(p.status) document.getElementById('pointStatus').value = p.status;
+      document.getElementById('pointOwnership').value = p.ownership || 'Proprio';
+      document.getElementById('pointSourceUsina').value = p.sourceUsina || '';
 
       document.getElementById('formTitle').innerText = 'Editar Ponto';
       document.getElementById('btnDeletePoint').style.display = 'block';
+
       setType(p.type);
       document.getElementById('modalForm').classList.add('active');
     }
@@ -317,76 +358,168 @@
       document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
       
       const rentalGrp = document.getElementById('rentalStatusGroup');
+      const usinaSourceGrp = document.getElementById('usinaSourceGroup');
+      const ownershipGrp = document.getElementById('ownershipGroup');
+
       if(type === 'aluguel') {
         rentalGrp.style.display = 'block';
-        document.getElementById('lblKwh').innerText = 'Consumo Média (kWh)';
-        document.getElementById('lblVal').innerText = 'Valor Aluguel (R$)';
+        usinaSourceGrp.style.display = 'none';
+        ownershipGrp.style.display = 'block';
+      } else if(type === 'cliente') {
+        rentalGrp.style.display = 'none';
+        usinaSourceGrp.style.display = 'block';
+        ownershipGrp.style.display = 'none';
       } else {
         rentalGrp.style.display = 'none';
-        document.getElementById('lblKwh').innerText = type === 'usina' ? 'Geração (kWh)' : 'Consumo (kWh)';
-        document.getElementById('lblVal').innerText = type === 'usina' ? 'Custo (%)' : 'Desconto (%)';
+        usinaSourceGrp.style.display = 'none';
+        ownershipGrp.style.display = 'block';
       }
     }
 
     document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
 
-    document.getElementById('btnSavePoint').addEventListener('click', () => {
+    // Operações CRUD com Google Sheets
+    document.getElementById('btnSavePoint').addEventListener('click', async () => {
       const id = document.getElementById('pointId').value || Date.now().toString();
-      const lat = parseFloat(document.getElementById('pointLat').value);
-      const lng = parseFloat(document.getElementById('pointLng').value);
-      const name = document.getElementById('pointName').value || 'Novo Ponto';
-      const kwh = parseFloat(document.getElementById('pointKwh').value) || 0;
-      const val = parseFloat(document.getElementById('pointVal').value) || 0;
-      const notes = document.getElementById('pointNotes').value;
-      const status = document.getElementById('pointStatus').value;
+      const item = {
+        id,
+        lat: parseFloat(document.getElementById('pointLat').value),
+        lng: parseFloat(document.getElementById('pointLng').value),
+        type: currentType,
+        name: document.getElementById('pointName').value || 'Novo Ponto',
+        kwh: parseFloat(document.getElementById('pointKwh').value) || 0,
+        val: parseFloat(document.getElementById('pointVal').value) || 0,
+        ownership: document.getElementById('pointOwnership').value,
+        sourceUsina: document.getElementById('pointSourceUsina').value,
+        status: document.getElementById('pointStatus').value,
+        notes: document.getElementById('pointNotes').value
+      };
 
-      const idx = points.findIndex(p => p.id === id);
-      const item = { id, lat, lng, type: currentType, name, kwh, val, notes, status };
-
+      const idx = points.findIndex(p => p.id.toString() === id.toString());
       if (idx >= 0) points[idx] = item; else points.push(item);
 
       localStorage.setItem('solar_db', JSON.stringify(points));
       renderMarkers();
       closeModals();
+
+      if (scriptUrl) {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'create', data: item })
+        });
+      }
     });
 
-    document.getElementById('btnDeletePoint').addEventListener('click', () => {
+    document.getElementById('btnDeletePoint').addEventListener('click', async () => {
       const id = document.getElementById('pointId').value;
-      points = points.filter(p => p.id !== id);
+      points = points.filter(p => p.id.toString() !== id.toString());
       localStorage.setItem('solar_db', JSON.stringify(points));
       renderMarkers();
       closeModals();
+
+      if (scriptUrl) {
+        await fetch(scriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', data: { id } })
+        });
+      }
+    });
+
+    // Sincronizar da Planilha para o App
+    document.getElementById('btnSync').addEventListener('click', async () => {
+      if (!scriptUrl) { alert('Insira a URL da planilha no botão "Planilha".'); return; }
+      try {
+        const res = await fetch(scriptUrl);
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          points = data;
+          localStorage.setItem('solar_db', JSON.stringify(points));
+          renderMarkers();
+          alert('Sincronização concluída!');
+        }
+      } catch (e) {
+        alert('Erro ao sincronizar. Verifique a URL do script.');
+      }
+    });
+
+    document.getElementById('btnConfig').addEventListener('click', () => {
+      document.getElementById('sheetUrl').value = scriptUrl;
+      document.getElementById('modalConfig').classList.add('active');
+    });
+
+    document.getElementById('btnSaveConfig').addEventListener('click', () => {
+      scriptUrl = document.getElementById('sheetUrl').value.trim();
+      localStorage.setItem('solar_sheet_url', scriptUrl);
+      closeModals();
+      alert('URL salva!');
     });
 
     function updateStats() {
-      let gen = 0, cons = 0, rent = 0;
+      let ownGen = 0, socGen = 0, ownCons = 0, socCons = 0;
+
       points.forEach(p => {
-        if (p.type === 'usina') gen += p.kwh;
-        if (p.type === 'cliente') cons += p.kwh;
-        if (p.type === 'aluguel') rent++;
+        if (p.type === 'usina') {
+          if (p.ownership === 'Sociedade') socGen += p.kwh;
+          else ownGen += p.kwh;
+        }
+        if (p.type === 'cliente') {
+          const u = points.find(item => item.type === 'usina' && item.name === p.sourceUsina);
+          if (u && u.ownership === 'Sociedade') socCons += p.kwh;
+          else ownCons += p.kwh;
+        }
       });
-      document.getElementById('stGen').innerText = `${gen.toLocaleString()} kWh`;
-      document.getElementById('stCons').innerText = `${cons.toLocaleString()} kWh`;
-      document.getElementById('stRent').innerText = `${rent} Casa(s)`;
+
+      document.getElementById('summaryContent').innerHTML = `
+        <div style="background:rgba(245,158,11,0.12); border:1px solid #f59e0b; padding:12px; border-radius:12px; margin-bottom:10px;">
+          <div style="font-size:12px; font-weight:800; color:#f59e0b;">MINHA USINA (PRÓPRIA)</div>
+          <div>Geração: ${ownGen.toLocaleString()} kWh/mês</div>
+          <div>Consumo Clientes: ${ownCons.toLocaleString()} kWh/mês</div>
+          <div style="font-weight:700;">Saldo: ${(ownGen - ownCons).toLocaleString()} kWh/mês</div>
+        </div>
+
+        <div style="background:rgba(16,185,129,0.12); border:1px solid #10b981; padding:12px; border-radius:12px;">
+          <div style="font-size:12px; font-weight:800; color:#10b981;">USINA EM SOCIEDADE (SÓCIO)</div>
+          <div>Geração: ${socGen.toLocaleString()} kWh/mês</div>
+          <div>Consumo Clientes: ${socCons.toLocaleString()} kWh/mês</div>
+          <div style="font-weight:700;">Saldo Sociedade: ${(socGen - socCons).toLocaleString()} kWh/mês</div>
+        </div>
+      `;
     }
 
-    // Exportar Backup em formato TXT
-    document.getElementById('btnExport').addEventListener('click', () => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(points, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `backup_solar_imoveis_${new Date().toISOString().slice(0,10)}.txt`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-    });
+    function renderList() {
+      const container = document.getElementById('pointsContainer');
+      container.innerHTML = '';
+      points.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'list-item';
+        
+        let color = '#f59e0b';
+        if (p.type === 'aluguel') color = '#3b82f6';
+        if (p.type === 'cliente') {
+          const u = points.find(item => item.type === 'usina' && item.name === p.sourceUsina);
+          color = (u && u.ownership === 'Sociedade') ? '#10b981' : '#f59e0b';
+        }
+
+        item.innerHTML = `
+          <div>
+            <div style="font-weight:800; font-size:14px; color:${color};">${p.name}</div>
+            <div style="font-size:12px; color:var(--text-muted);">${p.kwh} kWh/mês ${p.sourceUsina ? `| Usina: ${p.sourceUsina}` : ''}</div>
+          </div>
+          <button class="btn-act" style="padding:6px 12px; font-size:12px;">Ver</button>
+        `;
+        item.addEventListener('click', () => { map.setView([p.lat, p.lng], 17); closeModals(); });
+        container.appendChild(item);
+      });
+      lucide.createIcons();
+    }
 
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.classList.remove('active')); }
-    document.getElementById('btnList').addEventListener('click', () => document.getElementById('modalList').classList.add('active'));
-    document.getElementById('btnSummary').addEventListener('click', () => document.getElementById('modalSummary').classList.add('active'));
-    document.getElementById('btnLocate').addEventListener('click', () => {
-      navigator.geolocation.getCurrentPosition(p => map.setView([p.coords.latitude, p.coords.longitude], 16));
-    });
+    document.getElementById('btnList').addEventListener('click', () => { renderList(); document.getElementById('modalList').classList.add('active'); });
+    document.getElementById('btnSummary').addEventListener('click', () => { updateStats(); document.getElementById('modalSummary').classList.add('active'); });
 
     renderMarkers();
   </script>
