@@ -92,6 +92,8 @@
 
     .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px; }
     .btn-danger { width: 100%; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .btn-maps { width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+    .btn-maps:hover { background: #059669; }
 
     /* Finance Metrics Card */
     .fin-card {
@@ -170,6 +172,7 @@
         <div style="font-size:20px; font-weight:800; margin-top:4px; color:#fff;" id="pubName">-</div>
         <div style="font-size:15px; font-weight:700; margin-top:8px; color:var(--usina);" id="pubKwh">0 kWh/mês</div>
       </div>
+      <button class="btn-maps" id="btnPubMaps"><i data-lucide="navigation"></i> Abrir no Google Maps</button>
     </div>
   </div>
 
@@ -251,6 +254,7 @@
       </div>
 
       <button class="btn-main" id="btnSavePoint">Salvar na Planilha</button>
+      <button class="btn-maps" id="btnFormMaps"><i data-lucide="navigation"></i> Abrir no Google Maps</button>
       <button class="btn-danger" id="btnDeletePoint" style="display:none;">Excluir Ponto</button>
     </div>
   </div>
@@ -276,6 +280,7 @@
       </div>
 
       <button class="btn-act" id="btnGestaoEditDirect" style="width:100%;"><i data-lucide="edit-3"></i> Editar Informações / kWh</button>
+      <button class="btn-maps" id="btnGestaoMaps" style="margin-top:8px;"><i data-lucide="navigation"></i> Abrir no Google Maps</button>
     </div>
   </div>
 
@@ -429,6 +434,19 @@
       return { faturamentoBruto, custoProducao, custoIluminacao, custoTotal, lucroLiquido };
     }
 
+    function openGoogleMaps(lat, lng) {
+      window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+    }
+
+    function setupMapsButton(btnId, lat, lng) {
+      const btn = document.getElementById(btnId);
+      if (btn) {
+        btn.style.display = 'flex';
+        btn.onclick = () => openGoogleMaps(lat, lng);
+      }
+      lucide.createIcons();
+    }
+
     function createPinElement(point) {
       let pinColor = '#f59e0b';
       let iconSvg = '';
@@ -504,6 +522,9 @@
       document.getElementById('pubName').innerText = p.name;
       document.getElementById('pubTypeLabel').innerText = p.type === 'usina' ? 'Usina Solar (Geração)' : (p.type === 'cliente' ? 'Cliente Solar (Consumo)' : 'Casa de Aluguel');
       document.getElementById('pubKwh').innerText = `${p.kwh || 0} kWh / mês`;
+      
+      setupMapsButton('btnPubMaps', p.lat, p.lng);
+      
       document.getElementById('modalPublicView').classList.add('active');
     }
 
@@ -521,6 +542,8 @@
       document.getElementById('gCustoProd').innerText = `R$ ${fin.custoProducao.toFixed(2)}`;
       document.getElementById('gIlum').innerText = `R$ ${fin.custoIluminacao.toFixed(2)}`;
       document.getElementById('gLucro').innerText = `R$ ${fin.lucroLiquido.toFixed(2)}`;
+
+      setupMapsButton('btnGestaoMaps', p.lat, p.lng);
 
       document.getElementById('modalGestaoView').classList.add('active');
     }
@@ -567,6 +590,7 @@
       document.getElementById('formTitle').innerText = 'Novo Cadastro';
       document.getElementById('btnDeletePoint').style.display = 'none';
       setType('usina');
+      setupMapsButton('btnFormMaps', lat, lng);
       document.getElementById('modalForm').classList.add('active');
     }
 
@@ -588,6 +612,7 @@
       document.getElementById('btnDeletePoint').style.display = 'block';
 
       setType(p.type);
+      setupMapsButton('btnFormMaps', p.lat, p.lng);
       updateFinanceDisplay();
       document.getElementById('modalForm').classList.add('active');
     }
@@ -616,6 +641,12 @@
         usinaSourceGrp.style.display = 'none';
         ownershipGrp.style.display = 'block';
         finCard.style.display = 'none';
+      }
+
+      const lat = parseFloat(document.getElementById('pointLat').value);
+      const lng = parseFloat(document.getElementById('pointLng').value);
+      if(!isNaN(lat) && !isNaN(lng)) {
+        setupMapsButton('btnFormMaps', lat, lng);
       }
     }
 
