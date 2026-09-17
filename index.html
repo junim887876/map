@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+  <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#141824">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SolarInvest">
+    <link rel="apple-touch-icon" href="./logo_nova.jpg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Solar & Imóveis 3D</title>
@@ -829,5 +835,36 @@
     // Inicia carregando os marcadores limpos
     renderMarkers();
   </script>
+  <script>
+        let deferredPrompt;
+        const installBtn = document.getElementById('pwa-install-btn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (installBtn) installBtn.classList.remove('hidden');
+        });
+
+        if (installBtn) {
+            installBtn.addEventListener('click', async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('App instalado com sucesso');
+                }
+                deferredPrompt = null;
+                installBtn.classList.add('hidden');
+            });
+        }
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registrado:', reg.scope))
+                    .catch(err => console.error('Erro SW:', err));
+            });
+        }
+    </script>
 </body>
 </html>
