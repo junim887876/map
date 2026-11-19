@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head>
   <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#141824">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SolarInvest">
-    <link rel="apple-touch-icon" href="./logo_nova.jpg">
+  <meta name="theme-color" content="#141824">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SolarInvest">
+  <link rel="apple-touch-icon" href="./logo_nova.jpg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Solar, Imóveis & Software 3D</title>
+  <title>Solar, Imóveis & FlowNest IA 3D</title>
   
   <!-- MapLibre GL CSS -->
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -55,6 +55,7 @@
     .brand { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; user-select: none; }
     .brand i { color: var(--usina); }
     .mode-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: rgba(245,158,11,0.2); color: var(--usina); border: 1px solid rgba(245,158,11,0.4); display: none; }
+    .offline-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); display: none; }
 
     /* Map Controls */
     .map-controls {
@@ -148,7 +149,19 @@
     .fin-row.total { border-top: 1px solid var(--border); padding-top: 8px; font-weight: 800; font-size: 16px; color: #10b981; }
 
     .custom-svg-pin { filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); cursor: pointer; }
-    .list-item { background: #020617; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    
+    /* Agrupamento da Lista de Pontos */
+    .list-group { margin-bottom: 18px; }
+    .list-group-header {
+      font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 8px 12px; border-radius: 10px; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
+    }
+    .list-group-count {
+      font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,0.1); color: #fff;
+    }
+    .list-item { background: #020617; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -174,8 +187,9 @@
   <div class="header">
     <div class="brand" id="brandBtn">
       <i data-lucide="sun"></i>
-      <span>Solar & Negócios</span>
+      <span>Solar & FlowNest</span>
       <span class="mode-badge" id="modeBadge">ADM</span>
+      <span class="offline-badge" id="offlineBadge">OFFLINE</span>
     </div>
     <div style="display:flex; gap:6px;">
       <button class="btn-act" id="btnConfig" style="padding:6px 10px; font-size:11px;"><i data-lucide="link"></i> Planilha</button>
@@ -232,14 +246,14 @@
         <div class="type-btn active" data-type="usina"><i data-lucide="sun" style="width:16px;"></i> Usina</div>
         <div class="type-btn" data-type="cliente"><i data-lucide="zap" style="width:16px;"></i> Cliente Solar</div>
         <div class="type-btn" data-type="aluguel"><i data-lucide="home" style="width:16px;"></i> Imóvel</div>
-        <div class="type-btn" data-type="software"><i data-lucide="monitor" style="width:16px;"></i> Software</div>
+        <div class="type-btn" data-type="software"><i data-lucide="cpu" style="width:16px;"></i> FlowNest (IA)</div>
       </div>
 
       <input type="hidden" id="pointId"><input type="hidden" id="pointLat"><input type="hidden" id="pointLng">
 
       <div class="form-group">
         <label class="form-label" id="lblName">Nome do Ponto / Cliente</label>
-        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina Matriz, Casa do João ou Empresa X">
+        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina 1, Casa do João ou Empresa X">
       </div>
 
       <div class="form-group" id="locationTypeGroup">
@@ -295,10 +309,10 @@
 
       <div class="form-group">
         <label class="form-label">Observações</label>
-        <textarea class="form-textarea" id="pointNotes" rows="2" placeholder="UC, plano do sistema, telefone, detalhes..."></textarea>
+        <textarea class="form-textarea" id="pointNotes" rows="2" placeholder="UC, plano FlowNest, telefone, detalhes..."></textarea>
       </div>
 
-      <button class="btn-main" id="btnSavePoint">Salvar na Planilha</button>
+      <button class="btn-main" id="btnSavePoint">Salvar Localmente e na Planilha</button>
       <button class="btn-maps" id="btnFormMaps"><i data-lucide="navigation"></i> Abrir no Google Maps</button>
       <button class="btn-danger" id="btnDeletePoint" style="display:none;">Excluir Ponto</button>
     </div>
@@ -340,11 +354,11 @@
         <label class="form-label">Cole a URL da sua Planilha (Apps Script)</label>
         <input type="text" class="form-input" id="sheetUrl" placeholder="https://script.google.com/macros/s/.../exec">
       </div>
-      <button class="btn-main" id="btnSaveConfig">Carregar Dados</button>
+      <button class="btn-main" id="btnSaveConfig">Salvar e Carregar Dados</button>
     </div>
   </div>
 
-  <!-- Modal Lista -->
+  <!-- Modal Lista Separada por Categorias e Usinas -->
   <div class="modal" id="modalList">
     <div class="card">
       <div class="card-head">
@@ -372,15 +386,57 @@
   <script>
     const ADMIN_PASSWORD = "1234";
 
-    let points = JSON.parse(localStorage.getItem('solar_db') || '[]');
+    // ========================================================
+    // 💾 PERSISTÊNCIA OFFLINE (LOCALSTORAGE)
+    // ========================================================
+    let points = [];
+    try {
+      points = JSON.parse(localStorage.getItem('solar_db') || '[]');
+      if (!Array.isArray(points)) points = [];
+    } catch (e) {
+      points = [];
+    }
+
+    let pendingSyncQueue = [];
+    try {
+      pendingSyncQueue = JSON.parse(localStorage.getItem('solar_pending_queue') || '[]');
+    } catch (e) {
+      pendingSyncQueue = [];
+    }
+
     let scriptUrl = localStorage.getItem('solar_sheet_url') || '';
+    let savedViewport = null;
+    try {
+      savedViewport = JSON.parse(localStorage.getItem('solar_map_viewport') || 'null');
+    } catch (e) {
+      savedViewport = null;
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('solar_db', JSON.stringify(points));
+      localStorage.setItem('solar_pending_queue', JSON.stringify(pendingSyncQueue));
+    }
+
+    // Monitor de Conexão (Online / Offline)
+    function updateOnlineStatus() {
+      const badge = document.getElementById('offlineBadge');
+      if (!navigator.onLine) {
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+        flushPendingQueue();
+      }
+    }
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
     let currentType = 'usina';
     let isAdminUnlocked = false;
     let currentModeIndex = 0; // 0: ADM, 1: GESTÃO, 2: DEMO
     const modes = ['ADM', 'GESTÃO', 'DEMO'];
     let activeMarkers = [];
     let activePointForGestao = null;
-    let is3d = false;
+    let is3d = savedViewport ? !!savedViewport.is3d : false;
 
     const cleanSatelliteStyle = {
       version: 8,
@@ -394,16 +450,36 @@
       layers: [{ id: 'simple-tiles', type: 'raster', source: 'raster-tiles', minzoom: 0, maxzoom: 20 }]
     };
 
+    const initialCenter = (savedViewport && savedViewport.lng && savedViewport.lat)
+      ? [savedViewport.lng, savedViewport.lat]
+      : (points.length > 0 ? [points[0].lng, points[0].lat] : [-49.1179, -15.3181]);
+
     const map = new maplibregl.Map({
       container: 'map',
       style: cleanSatelliteStyle,
-      center: [-49.1179, -15.3181],
-      zoom: 14,
-      pitch: 0,
-      bearing: 0
+      center: initialCenter,
+      zoom: (savedViewport && savedViewport.zoom) ? savedViewport.zoom : 14,
+      pitch: is3d ? 60 : 0,
+      bearing: is3d ? -20 : 0
+    });
+
+    if (is3d) {
+      document.getElementById('btn3d').style.background = '#2563eb';
+    }
+
+    // Salva automaticamente a posição do mapa sempre que você mover ou der zoom
+    map.on('moveend', () => {
+      const c = map.getCenter();
+      localStorage.setItem('solar_map_viewport', JSON.stringify({
+        lng: c.lng,
+        lat: c.lat,
+        zoom: map.getZoom(),
+        is3d: is3d
+      }));
     });
 
     lucide.createIcons();
+    updateOnlineStatus();
 
     document.getElementById('btn3d').addEventListener('click', () => {
       is3d = !is3d;
@@ -496,7 +572,8 @@
         iconSvg = '<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1m-6 0h6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
       } else if (point.type === 'software') {
         pinColor = '#8b5cf6';
-        iconSvg = '<rect x="3" y="4" width="18" height="12" rx="2" stroke="#fff" stroke-width="2" fill="none"/><path d="M8 20h8M12 16v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
+        // Ícone Microchip IA (cpu) limpo para o pino
+        iconSvg = '<rect x="5" y="5" width="14" height="14" rx="2" stroke="#fff" stroke-width="2" fill="none"/><rect x="9" y="9" width="6" height="6" stroke="#fff" stroke-width="1.8" fill="none"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
       } else if (point.type === 'cliente') {
         iconSvg = '<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
         const sourceUsinaObj = points.find(p => p.type === 'usina' && p.name === point.sourceUsina);
@@ -529,7 +606,6 @@
       const currentMode = modes[currentModeIndex];
 
       points.forEach(p => {
-        // No modo DEMO, oculta imóveis de aluguel (e opcionalmente software, se quiser mostrar software no DEMO basta remover || p.type === 'software')
         if (currentMode === 'DEMO' && p.type === 'aluguel') return;
 
         const el = createPinElement(p);
@@ -569,11 +645,11 @@
         pubKwhEl.style.color = '#10b981';
         pubKwhEl.innerText = `${p.kwh || 0} kWh / mês`;
       } else if (p.type === 'software') {
-        document.getElementById('pubTypeLabel').innerText = 'Cliente de Software';
+        document.getElementById('pubTypeLabel').innerText = 'FlowNest (IA) — Licença';
         pubKwhEl.style.color = 'var(--software)';
         pubKwhEl.innerText = `Licença ${p.status || 'Ativa'}`;
       } else {
-        document.getElementById('pubTypeLabel').innerText = 'Imóvel';
+        document.getElementById('pubTypeLabel').innerText = 'Imóvel de Aluguel';
         pubKwhEl.style.color = 'var(--aluguel)';
         pubKwhEl.innerText = `Status: ${p.status || 'Alugada'}`;
       }
@@ -704,10 +780,10 @@
         kwhGrp.style.display = 'none';
         lblVal.innerText = 'Valor do Aluguel (R$)';
       } else if (type === 'software') {
-        lblName.innerText = 'Nome do Cliente / Empresa (Software)';
+        lblName.innerText = 'Nome do Cliente / Empresa (FlowNest IA)';
         locationGrp.style.display = 'none';
         rentalGrp.style.display = 'block';
-        lblStatus.innerText = 'Status da Licença';
+        lblStatus.innerText = 'Status da Licença FlowNest';
         statusSelect.innerHTML = `
           <option value="Ativa">Ativa (Pagante)</option>
           <option value="Teste">Período de Teste (Trial)</option>
@@ -728,7 +804,7 @@
         kwhGrp.style.display = 'block';
         lblVal.innerText = 'Desconto (%)';
       } else {
-        lblName.innerText = 'Nome da Usina';
+        lblName.innerText = 'Nome da Usina (Ex: Usina 1, Usina 2...)';
         locationGrp.style.display = 'block';
         rentalGrp.style.display = 'none';
         usinaSourceGrp.style.display = 'none';
@@ -760,6 +836,28 @@
     document.getElementById('pointLocationType').addEventListener('change', updateFinanceDisplay);
     document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
 
+    // Envia operações pendentes caso tenham sido feitas offline
+    async function flushPendingQueue() {
+      if (!scriptUrl || !navigator.onLine || pendingSyncQueue.length === 0) return;
+      const queueCopy = [...pendingSyncQueue];
+      pendingSyncQueue = [];
+      saveToLocalStorage();
+
+      for (const payload of queueCopy) {
+        try {
+          await fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          pendingSyncQueue.push(payload);
+        }
+      }
+      saveToLocalStorage();
+    }
+
     document.getElementById('btnSavePoint').addEventListener('click', async () => {
       const id = document.getElementById('pointId').value || Date.now().toString();
       const item = {
@@ -780,53 +878,79 @@
       const idx = points.findIndex(p => p.id.toString() === id.toString());
       if (idx >= 0) points[idx] = item; else points.push(item);
 
-      localStorage.setItem('solar_db', JSON.stringify(points));
+      const payload = { action: 'create', data: item };
+      if (!navigator.onLine) {
+        pendingSyncQueue.push(payload);
+      }
+
+      saveToLocalStorage();
       renderMarkers();
       closeModals();
 
-      if (scriptUrl) {
-        await fetch(scriptUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'create', data: item })
-        });
+      if (scriptUrl && navigator.onLine) {
+        try {
+          await fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          pendingSyncQueue.push(payload);
+          saveToLocalStorage();
+        }
       }
     });
 
     document.getElementById('btnDeletePoint').addEventListener('click', async () => {
       const id = document.getElementById('pointId').value;
       points = points.filter(p => p.id.toString() !== id.toString());
-      localStorage.setItem('solar_db', JSON.stringify(points));
+      
+      const payload = { action: 'delete', data: { id } };
+      if (!navigator.onLine) {
+        pendingSyncQueue.push(payload);
+      }
+
+      saveToLocalStorage();
       renderMarkers();
       closeModals();
 
-      if (scriptUrl) {
-        await fetch(scriptUrl, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', data: { id } })
-        });
+      if (scriptUrl && navigator.onLine) {
+        try {
+          await fetch(scriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {
+          pendingSyncQueue.push(payload);
+          saveToLocalStorage();
+        }
       }
     });
 
     document.getElementById('btnSync').addEventListener('click', async () => {
+      if (!navigator.onLine) {
+        alert(`Você está sem internet (Modo Offline).\n\nOs ${points.length} pontos salvos no aparelho continuam disponíveis normalmente!`);
+        return;
+      }
       if (!scriptUrl) {
         document.getElementById('modalConfig').classList.add('active');
         return;
       }
       try {
+        await flushPendingQueue();
         const res = await fetch(scriptUrl);
         const data = await res.json();
         if (Array.isArray(data)) {
           points = data;
-          localStorage.setItem('solar_db', JSON.stringify(points));
+          saveToLocalStorage();
           renderMarkers();
-          alert('Dados carregados da planilha!');
+          alert('Dados sincronizados com a planilha e salvos no aparelho!');
         }
       } catch (e) {
-        alert('Erro ao carregar da planilha. Verifique a URL do Script.');
+        alert('Sem resposta da planilha. Exibindo dados salvos localmente no aparelho.');
       }
     });
 
@@ -840,7 +964,7 @@
       localStorage.setItem('solar_sheet_url', scriptUrl);
       closeModals();
       
-      if (scriptUrl) {
+      if (scriptUrl && navigator.onLine) {
         document.getElementById('btnSync').click();
       }
     });
@@ -854,13 +978,13 @@
 
       points.forEach(p => {
         if (p.type === 'usina') {
-          if (p.ownership === 'Sociedade') socGen += p.kwh;
-          else ownGen += p.kwh;
+          if (p.ownership === 'Sociedade') socGen += (p.kwh || 0);
+          else ownGen += (p.kwh || 0);
         }
         if (p.type === 'cliente') {
           const u = points.find(item => item.type === 'usina' && item.name === p.sourceUsina);
-          if (u && u.ownership === 'Sociedade') socCons += p.kwh;
-          else ownCons += p.kwh;
+          if (u && u.ownership === 'Sociedade') socCons += (p.kwh || 0);
+          else ownCons += (p.kwh || 0);
 
           const fin = computeFinances(p.kwh || 0, p.locationType !== 'rural');
           totalLucroSolar += fin.lucroLiquido;
@@ -880,12 +1004,12 @@
         <div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:14px; border-radius:14px; margin-bottom:12px;">
           <div style="font-size:11px; font-weight:800; color:#10b981;">RESULTADO MENSAL CONSOLIDADO</div>
           <div style="font-size:24px; font-weight:900; margin-top:2px;">R$ ${receitaTotalGeral.toFixed(2)}</div>
-          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Solar Líquido + Aluguéis + Licenças Software</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Solar Líquido + Aluguéis + FlowNest (IA)</div>
         </div>
 
         <div style="background:rgba(139,92,246,0.12); border:1px solid #8b5cf6; padding:12px; border-radius:12px; margin-bottom:10px;">
-          <div style="font-size:11px; font-weight:800; color:#8b5cf6;">LICENÇAS DE SOFTWARE (MRR)</div>
-          <div>Clientes Ativos: <strong>${qtdSoftwareAtivo}</strong></div>
+          <div style="font-size:11px; font-weight:800; color:#8b5cf6;">FLOWNEST (IA) — LICENÇAS DE SOFTWARE</div>
+          <div>Licenças Ativas: <strong>${qtdSoftwareAtivo}</strong></div>
           <div style="font-weight:700; margin-top:2px;">Faturamento Mensal: R$ ${totalSoftwareMRR.toFixed(2)}</div>
         </div>
 
@@ -902,40 +1026,103 @@
       `;
     }
 
+    // ========================================================
+    // 📋 LISTA ORGANIZADA POR CATEGORIA E POR USINA
+    // ========================================================
+    function createListItemHTML(p, color, subtitle) {
+      const item = document.createElement('div');
+      item.className = 'list-item';
+      item.innerHTML = `
+        <div>
+          <div style="font-weight:800; font-size:14px; color:${color};">${p.name}</div>
+          <div style="font-size:12px; color:var(--text-muted);">${subtitle}</div>
+        </div>
+        <button class="btn-act" style="padding:6px 12px; font-size:12px; flex:none;">Ver</button>
+      `;
+      item.addEventListener('click', () => { 
+        map.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: is3d ? 60 : 0 });
+        closeModals(); 
+      });
+      return item;
+    }
+
+    function renderGroupSection(container, title, color, items, getItemProps) {
+      if (items.length === 0) return;
+
+      const groupDiv = document.createElement('div');
+      groupDiv.className = 'list-group';
+
+      const header = document.createElement('div');
+      header.className = 'list-group-header';
+      header.style.color = color;
+      header.style.borderColor = `${color}40`;
+      header.innerHTML = `
+        <span>${title}</span>
+        <span class="list-group-count">${items.length}</span>
+      `;
+      groupDiv.appendChild(header);
+
+      items.forEach(p => {
+        const props = getItemProps(p);
+        groupDiv.appendChild(createListItemHTML(p, props.color, props.subtitle));
+      });
+
+      container.appendChild(groupDiv);
+    }
+
     function renderList() {
       const container = document.getElementById('pointsContainer');
       container.innerHTML = '';
-      points.forEach(p => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        
-        let color = '#f59e0b';
-        let subtitle = `${p.kwh} kWh/mês ${p.sourceUsina ? `| Usina: ${p.sourceUsina}` : ''}`;
 
-        if (p.type === 'aluguel') {
-          color = '#3b82f6';
-          subtitle = `Imóvel (${p.status || 'Alugada'}) ${isAdminUnlocked ? `| R$ ${(p.val || 0).toFixed(2)}` : ''}`;
-        } else if (p.type === 'software') {
-          color = '#8b5cf6';
-          subtitle = `Software (${p.status || 'Ativa'}) ${isAdminUnlocked ? `| R$ ${(p.val || 0).toFixed(2)}/mês` : ''}`;
-        } else if (p.type === 'cliente') {
-          const u = points.find(item => item.type === 'usina' && item.name === p.sourceUsina);
-          color = (u && u.ownership === 'Sociedade') ? '#10b981' : '#f59e0b';
-        }
+      if (points.length === 0) {
+        container.innerHTML = '<div style="text-align:center; color:var(--text-muted); padding:20px; font-size:13px;">Nenhum ponto cadastrado ainda.</div>';
+        return;
+      }
 
-        item.innerHTML = `
-          <div>
-            <div style="font-weight:800; font-size:14px; color:${color};">${p.name}</div>
-            <div style="font-size:12px; color:var(--text-muted);">${subtitle}</div>
-          </div>
-          <button class="btn-act" style="padding:6px 12px; font-size:12px;">Ver</button>
-        `;
-        item.addEventListener('click', () => { 
-          map.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: is3d ? 60 : 0 });
-          closeModals(); 
-        });
-        container.appendChild(item);
+      const usinas = points.filter(p => p.type === 'usina');
+      const clientes = points.filter(p => p.type === 'cliente');
+      const alugueis = points.filter(p => p.type === 'aluguel');
+      const softwares = points.filter(p => p.type === 'software');
+
+      // 1. USINAS
+      renderGroupSection(container, '☀️ Usinas Solares', '#f59e0b', usinas, (p) => ({
+        color: '#f59e0b',
+        subtitle: `${p.kwh || 0} kWh/mês | ${p.ownership === 'Sociedade' ? 'Sociedade' : 'Própria'}`
+      }));
+
+      // 2. CLIENTES AGRUPADOS DINAMICAMENTE POR USINA (Usina 1, Usina 2, Usina 3...)
+      usinas.forEach((usina, index) => {
+        const clientesDaUsina = clientes.filter(c => c.sourceUsina === usina.name);
+        const isSoc = usina.ownership === 'Sociedade';
+        const corGrupo = isSoc ? '#10b981' : '#f59e0b';
+        const tituloGrupo = `⚡ Clientes — ${usina.name}`;
+
+        renderGroupSection(container, tituloGrupo, corGrupo, clientesDaUsina, (p) => ({
+          color: corGrupo,
+          subtitle: `${p.kwh || 0} kWh/mês`
+        }));
       });
+
+      // Clientes que possuem nome de usina que não está na lista ou sem usina vinculada
+      const nomesUsinasExistentes = usinas.map(u => u.name);
+      const clientesSemUsina = clientes.filter(c => !c.sourceUsina || !nomesUsinasExistentes.includes(c.sourceUsina));
+      renderGroupSection(container, '⚡ Clientes Solar (Sem Usina Vinculada)', '#94a3b8', clientesSemUsina, (p) => ({
+        color: '#e2e8f0',
+        subtitle: `${p.kwh || 0} kWh/mês${p.sourceUsina ? ` | ${p.sourceUsina}` : ''}`
+      }));
+
+      // 3. IMÓVEIS DE ALUGUEL
+      renderGroupSection(container, '🏠 Imóveis (Aluguel)', '#3b82f6', alugueis, (p) => ({
+        color: '#3b82f6',
+        subtitle: `${p.status || 'Alugada'}${isAdminUnlocked ? ` | R$ ${(p.val || 0).toFixed(2)}` : ''}`
+      }));
+
+      // 4. FLOWNEST (IA) — LICENÇAS DE SOFTWARE
+      renderGroupSection(container, '🤖 FlowNest (IA) — Licenças', '#8b5cf6', softwares, (p) => ({
+        color: '#8b5cf6',
+        subtitle: `Licença ${p.status || 'Ativa'}${isAdminUnlocked ? ` | R$ ${(p.val || 0).toFixed(2)}/mês` : ''}`
+      }));
+
       lucide.createIcons();
     }
 
@@ -943,38 +1130,65 @@
     document.getElementById('btnList').addEventListener('click', () => { renderList(); document.getElementById('modalList').classList.add('active'); });
     document.getElementById('btnSummary').addEventListener('click', () => { updateStats(); document.getElementById('modalSummary').classList.add('active'); });
 
+    // Carrega imediatamente os marcadores do localStorage (funciona 100% offline)
     renderMarkers();
+
+    // Sincronização silenciosa automática ao abrir se houver internet e URL configurada
+    if (navigator.onLine && scriptUrl) {
+      flushPendingQueue().then(() => {
+        fetch(scriptUrl)
+          .then(res => res.json())
+          .then(data => {
+            if (Array.isArray(data) && data.length > 0) {
+              points = data;
+              saveToLocalStorage();
+              renderMarkers();
+            }
+          })
+          .catch(() => {});
+      });
+    }
   </script>
+
   <script>
-        let deferredPrompt;
-        const installBtn = document.getElementById('pwa-install-btn');
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            if (installBtn) installBtn.classList.remove('hidden');
-        });
-
-        if (installBtn) {
-            installBtn.addEventListener('click', async () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    console.log('App instalado com sucesso');
-                }
-                deferredPrompt = null;
-                installBtn.classList.add('hidden');
-            });
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado:', reg.scope))
-                    .catch(err => console.error('Erro SW:', err));
-            });
-        }
-    </script>
+    // Service Worker com Cache Automático para Uso Offline
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW registrado:', reg.scope))
+          .catch(() => {
+            // Fallback: registra SW inline caso sw.js externo não exista no servidor
+            const swCode = `
+              const CACHE_NAME = 'solar-flownest-v1';
+              self.addEventListener('install', (e) => {
+                self.skipWaiting();
+              });
+              self.addEventListener('activate', (e) => {
+                e.waitUntil(clients.claim());
+              });
+              self.addEventListener('fetch', (e) => {
+                if (e.request.method !== 'GET') return;
+                if (e.request.url.includes('script.google.com')) return;
+                e.respondWith(
+                  caches.open(CACHE_NAME).then((cache) => {
+                    return fetch(e.request)
+                      .then((networkRes) => {
+                        if (networkRes && networkRes.status === 200) {
+                          cache.put(e.request, networkRes.clone());
+                        }
+                        return networkRes;
+                      })
+                      .catch(() => cache.match(e.request));
+                  })
+                );
+              });
+            `;
+            const blob = new Blob([swCode], { type: 'application/javascript' });
+            const swUrl = URL.createObjectURL(blob);
+            navigator.serviceWorker.register(swUrl).catch(() => {});
+          });
+      });
+    }
+  </script>
 </body>
 </html>
