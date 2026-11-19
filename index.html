@@ -9,7 +9,7 @@
     <link rel="apple-touch-icon" href="./logo_nova.jpg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Solar & Imóveis 3D</title>
+  <title>Solar, Imóveis & Software 3D</title>
   
   <!-- MapLibre GL CSS -->
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
@@ -25,6 +25,7 @@
       --cliente-proprio: #f59e0b;
       --cliente-socio: #10b981;
       --aluguel: #3b82f6;
+      --software: #8b5cf6;
       --text: #f8fafc;
       --text-muted: #94a3b8;
     }
@@ -33,10 +34,10 @@
     
     body, html { 
       width: 100%; height: 100%; overflow: hidden; 
-      overscroll-behavior: none; /* Bloqueia o efeito elástico de rolagem no iOS */
+      overscroll-behavior: none;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
       background: var(--bg); color: var(--text); 
-      -webkit-font-smoothing: antialiased; /* Suavização nativa no iOS */
+      -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
     
@@ -45,20 +46,20 @@
     /* Top Header */
     .header {
       position: absolute; 
-      top: calc(env(safe-area-inset-top) + 12px); /* Protege contra Ilha Dinâmica e Notch */
+      top: calc(env(safe-area-inset-top) + 12px);
       left: 12px; right: 12px; z-index: 1000;
       background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border);
       border-radius: 16px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    .brand { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; user-select: none; }
+    .brand { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; user-select: none; }
     .brand i { color: var(--usina); }
     .mode-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: rgba(245,158,11,0.2); color: var(--usina); border: 1px solid rgba(245,158,11,0.4); display: none; }
 
-    /* Map Controls (3D e Lock) */
+    /* Map Controls */
     .map-controls {
       position: absolute; 
-      top: calc(env(safe-area-inset-top) + 70px); /* Protege contra Ilha Dinâmica e Notch */
+      top: calc(env(safe-area-inset-top) + 70px);
       right: 12px; z-index: 1000;
       display: flex; flex-direction: column; gap: 8px;
     }
@@ -69,10 +70,10 @@
     }
     .btn-ctrl.unlocked { border-color: #10b981; color: #10b981; background: rgba(16,185,129,0.15); }
 
-    /* Floating Add Button (+) - Oculto por padrão para visitantes */
+    /* Floating Add Button (+) */
     .btn-add {
       position: absolute; 
-      bottom: calc(env(safe-area-inset-bottom) + 85px); /* Protege contra barra de navegação iOS */
+      bottom: calc(env(safe-area-inset-bottom) + 85px);
       right: 16px; z-index: 1000; width: 58px; height: 58px;
       border-radius: 50%; background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff;
       border: 2px solid rgba(255,255,255,0.25); display: none; align-items: center; justify-content: center; cursor: pointer;
@@ -81,7 +82,7 @@
 
     .bottom-bar { 
       position: absolute; 
-      bottom: calc(env(safe-area-inset-bottom) + 16px); /* Protege contra barra de navegação iOS */
+      bottom: calc(env(safe-area-inset-bottom) + 16px);
       left: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; pointer-events: none; 
     }
     .btn-act {
@@ -102,7 +103,7 @@
     .card { 
       width: 100%; max-width: 500px; background: #0f172a; border-top-left-radius: 24px; border-top-right-radius: 24px; border: 1px solid var(--border); 
       padding: 22px; 
-      padding-bottom: calc(env(safe-area-inset-bottom) + 22px); /* Evita que o botão final fique debaixo da barra do iPhone */
+      padding-bottom: calc(env(safe-area-inset-bottom) + 22px);
       max-height: 85vh; overflow-y: auto; transform: translateY(100%); transition: 0.25s ease; 
     }
     .modal.active .card { transform: translateY(0); }
@@ -113,9 +114,7 @@
     
     .form-input, .form-textarea, .form-select { 
       width: 100%; background: #020617; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: #fff; 
-      font-size: 16px; /* OBRIGATÓRIO SER 16px NO IOS PARA EVITAR ZOOM NA TELA AO DIGITAR */
-      outline: none; 
-      appearance: none; -webkit-appearance: none; /* Remove o estilo nativo feio do iOS */
+      font-size: 16px; outline: none; appearance: none; -webkit-appearance: none;
     }
     .form-select {
       background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -127,11 +126,13 @@
     
     .form-row { display: flex; gap: 10px; } .form-row .form-group { flex: 1; }
 
-    .type-selector { display: flex; gap: 6px; margin-bottom: 16px; }
-    .type-btn { flex: 1; padding: 10px 8px; border-radius: 12px; border: 1px solid var(--border); background: #020617; color: var(--text-muted); font-weight: 700; font-size: 11px; display: flex; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+    /* Seletor de 4 Categorias */
+    .type-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 16px; }
+    .type-btn { padding: 10px 8px; border-radius: 12px; border: 1px solid var(--border); background: #020617; color: var(--text-muted); font-weight: 700; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
     .type-btn.active[data-type="usina"] { background: rgba(245, 158, 11, 0.18); border-color: var(--usina); color: var(--usina); }
-    .type-btn.active[data-type="cliente"] { background: rgba(59, 130, 246, 0.18); border-color: #3b82f6; color: #3b82f6; }
+    .type-btn.active[data-type="cliente"] { background: rgba(16, 185, 129, 0.18); border-color: #10b981; color: #10b981; }
     .type-btn.active[data-type="aluguel"] { background: rgba(59, 130, 246, 0.18); border-color: var(--aluguel); color: var(--aluguel); }
+    .type-btn.active[data-type="software"] { background: rgba(139, 92, 246, 0.18); border-color: var(--software); color: var(--software); }
 
     .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px; }
     .btn-danger { width: 100%; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 8px; }
@@ -154,7 +155,7 @@
 
   <div id="map"></div>
 
-  <!-- Controles do Mapa (3D e Login) -->
+  <!-- Controles do Mapa -->
   <div class="map-controls">
     <button class="btn-ctrl" id="btn3d">3D</button>
     <button class="btn-ctrl" id="btnAdminAuth" title="Área do Empresário"><i data-lucide="lock"></i></button>
@@ -166,14 +167,14 @@
     <button class="crosshair-btn" id="btnConfirmCrosshair"><i data-lucide="check"></i> Confirmar Ponto Aqui</button>
   </div>
 
-  <!-- Botão (+) -> Apenas para Empresário Logado -->
+  <!-- Botão (+) -->
   <button class="btn-add" id="btnToggleCrosshair"><i data-lucide="plus" style="width:28px;height:28px;"></i></button>
 
   <!-- Top Bar -->
   <div class="header">
     <div class="brand" id="brandBtn">
       <i data-lucide="sun"></i>
-      <span>Solar & Imóveis</span>
+      <span>Solar & Negócios</span>
       <span class="mode-badge" id="modeBadge">ADM</span>
     </div>
     <div style="display:flex; gap:6px;">
@@ -203,7 +204,7 @@
     </div>
   </div>
 
-  <!-- Modal de Leitura para Visitante (Sem Dados Financeiros) -->
+  <!-- Modal de Leitura para Visitante -->
   <div class="modal" id="modalPublicView">
     <div class="card">
       <div class="card-head">
@@ -213,13 +214,13 @@
       <div style="background:#020617; border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px;">
         <div style="font-size:12px; color:var(--text-muted); font-weight:800; text-transform:uppercase;" id="pubTypeLabel">INFORMAÇÃO</div>
         <div style="font-size:20px; font-weight:800; margin-top:4px; color:#fff;" id="pubName">-</div>
-        <div style="font-size:15px; font-weight:700; margin-top:8px; color:var(--usina);" id="pubKwh">0 kWh/mês</div>
+        <div style="font-size:15px; font-weight:700; margin-top:8px; color:var(--usina);" id="pubKwh">-</div>
       </div>
       <button class="btn-maps" id="btnPubMaps"><i data-lucide="navigation"></i> Abrir no Google Maps</button>
     </div>
   </div>
 
-  <!-- Form Modal (Exclusivo para Edição do Empresário) -->
+  <!-- Form Modal -->
   <div class="modal" id="modalForm">
     <div class="card">
       <div class="card-head">
@@ -228,19 +229,20 @@
       </div>
 
       <div class="type-selector">
-        <div class="type-btn active" data-type="usina"><i data-lucide="sun"></i> Usina</div>
-        <div class="type-btn" data-type="cliente"><i data-lucide="zap"></i> Cliente</div>
-        <div class="type-btn" data-type="aluguel"><i data-lucide="home"></i> Aluguel</div>
+        <div class="type-btn active" data-type="usina"><i data-lucide="sun" style="width:16px;"></i> Usina</div>
+        <div class="type-btn" data-type="cliente"><i data-lucide="zap" style="width:16px;"></i> Cliente Solar</div>
+        <div class="type-btn" data-type="aluguel"><i data-lucide="home" style="width:16px;"></i> Imóvel</div>
+        <div class="type-btn" data-type="software"><i data-lucide="monitor" style="width:16px;"></i> Software</div>
       </div>
 
       <input type="hidden" id="pointId"><input type="hidden" id="pointLat"><input type="hidden" id="pointLng">
 
       <div class="form-group">
-        <label class="form-label">Nome do Ponto / Cliente</label>
-        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina Matriz ou Casa do João">
+        <label class="form-label" id="lblName">Nome do Ponto / Cliente</label>
+        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina Matriz, Casa do João ou Empresa X">
       </div>
 
-      <div class="form-group">
+      <div class="form-group" id="locationTypeGroup">
         <label class="form-label">Localização da Casa / Ponto</label>
         <select class="form-select" id="pointLocationType">
           <option value="urbana">Urbana (Com Iluminação Pública - R$ 21,00)</option>
@@ -251,7 +253,7 @@
       <div class="form-group" id="ownershipGroup">
         <label class="form-label">Titularidade / Propriedade</label>
         <select class="form-select" id="pointOwnership">
-          <option value="Proprio">100% Minha Usina / Casa</option>
+          <option value="Proprio">100% Próprio</option>
           <option value="Sociedade">Sociedade (Com Sócio/Sogro)</option>
         </select>
       </div>
@@ -272,18 +274,18 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" id="kwhGroup">
           <label class="form-label" id="lblKwh">kWh / Mês</label>
           <input type="number" class="form-input" id="pointKwh" placeholder="0">
         </div>
-        <div class="form-group">
-          <label class="form-label" id="lblVal">Desconto (%) / Aluguel (R$)</label>
+        <div class="form-group" id="valGroup">
+          <label class="form-label" id="lblVal">Desconto (%) / Valor (R$)</label>
           <input type="number" class="form-input" id="pointVal" value="20">
         </div>
       </div>
 
       <div class="form-group" id="rentalStatusGroup" style="display:none;">
-        <label class="form-label">Status do Imóvel</label>
+        <label class="form-label" id="lblStatus">Status</label>
         <select class="form-select" id="pointStatus">
           <option value="Alugada">Alugada</option>
           <option value="Disponível">Disponível</option>
@@ -293,7 +295,7 @@
 
       <div class="form-group">
         <label class="form-label">Observações</label>
-        <textarea class="form-textarea" id="pointNotes" rows="2" placeholder="UC, telefone, detalhes..."></textarea>
+        <textarea class="form-textarea" id="pointNotes" rows="2" placeholder="UC, plano do sistema, telefone, detalhes..."></textarea>
       </div>
 
       <button class="btn-main" id="btnSavePoint">Salvar na Planilha</button>
@@ -302,7 +304,7 @@
     </div>
   </div>
 
-  <!-- Pop-up Exclusivo do Modo GESTÃO (Empresário Logado) -->
+  <!-- Pop-up Exclusivo do Modo GESTÃO -->
   <div class="modal" id="modalGestaoView">
     <div class="card">
       <div class="card-head">
@@ -357,7 +359,7 @@
   <div class="modal" id="modalSummary">
     <div class="card">
       <div class="card-head">
-        <h3>Balanço Energético e Lucratividade</h3>
+        <h3>Balanço Geral e Lucratividade</h3>
         <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
       </div>
       <div id="summaryContent"></div>
@@ -368,22 +370,18 @@
   <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
 
   <script>
-    // ========================================================
-    // 🔑 SENHA DO EMPRESÁRIO (ALTERE AQUI SE DESEJAR A SUA SENHA)
-    // ========================================================
     const ADMIN_PASSWORD = "1234";
 
     let points = JSON.parse(localStorage.getItem('solar_db') || '[]');
     let scriptUrl = localStorage.getItem('solar_sheet_url') || '';
     let currentType = 'usina';
-    let isAdminUnlocked = false; // Começa bloqueado para visitantes
+    let isAdminUnlocked = false;
     let currentModeIndex = 0; // 0: ADM, 1: GESTÃO, 2: DEMO
     const modes = ['ADM', 'GESTÃO', 'DEMO'];
     let activeMarkers = [];
     let activePointForGestao = null;
     let is3d = false;
 
-    // Estilo de Satélite Limpo
     const cleanSatelliteStyle = {
       version: 8,
       sources: {
@@ -407,14 +405,12 @@
 
     lucide.createIcons();
 
-    // Controle 3D
     document.getElementById('btn3d').addEventListener('click', () => {
       is3d = !is3d;
       map.easeTo({ pitch: is3d ? 60 : 0, bearing: is3d ? -20 : 0, duration: 1000 });
       document.getElementById('btn3d').style.background = is3d ? '#2563eb' : 'var(--card-bg)';
     });
 
-    // Login do Empresário
     document.getElementById('btnAdminAuth').addEventListener('click', () => {
       if (isAdminUnlocked) {
         alert('Modo Empresário já está ativo!');
@@ -430,7 +426,6 @@
         closeModals();
         alert('Acesso Empresário Concedido!');
         
-        // Ativa os controles restritos
         document.getElementById('modeBadge').style.display = 'inline-block';
         document.getElementById('btnSummary').style.display = 'flex';
         document.getElementById('btnToggleCrosshair').style.display = 'flex';
@@ -446,10 +441,9 @@
       }
     });
 
-    // Alternar Modos (Apenas com Admin Desbloqueado)
     let brandClicks = 0;
     document.getElementById('brandBtn').addEventListener('click', () => {
-      if (!isAdminUnlocked) return; // Visitante não alterna modos
+      if (!isAdminUnlocked) return;
 
       brandClicks++;
       if (brandClicks >= 3) {
@@ -500,13 +494,16 @@
       } else if (point.type === 'aluguel') {
         pinColor = '#3b82f6';
         iconSvg = '<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1m-6 0h6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
+      } else if (point.type === 'software') {
+        pinColor = '#8b5cf6';
+        iconSvg = '<rect x="3" y="4" width="18" height="12" rx="2" stroke="#fff" stroke-width="2" fill="none"/><path d="M8 20h8M12 16v4" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
       } else if (point.type === 'cliente') {
         iconSvg = '<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
         const sourceUsinaObj = points.find(p => p.type === 'usina' && p.name === point.sourceUsina);
         if (sourceUsinaObj) {
           pinColor = sourceUsinaObj.ownership === 'Sociedade' ? '#10b981' : '#f59e0b';
         } else {
-          pinColor = '#3b82f6';
+          pinColor = '#10b981';
         }
       }
 
@@ -532,6 +529,7 @@
       const currentMode = modes[currentModeIndex];
 
       points.forEach(p => {
+        // No modo DEMO, oculta imóveis de aluguel (e opcionalmente software, se quiser mostrar software no DEMO basta remover || p.type === 'software')
         if (currentMode === 'DEMO' && p.type === 'aluguel') return;
 
         const el = createPinElement(p);
@@ -543,13 +541,10 @@
           e.stopPropagation();
 
           if (!isAdminUnlocked) {
-            // MODO VISITANTE: Mostra apenas nome e kWh (Zero financeiro)
             openPublicView(p);
           } else if (currentMode === 'GESTÃO' && p.type === 'cliente') {
-            // MODO GESTÃO: Pop-up de Faturamento
             openGestaoView(p);
           } else {
-            // MODO ADM: Edição
             openEditForm(p.id);
           }
         });
@@ -563,11 +558,27 @@
     function openPublicView(p) {
       document.getElementById('pubTitle').innerText = p.name;
       document.getElementById('pubName').innerText = p.name;
-      document.getElementById('pubTypeLabel').innerText = p.type === 'usina' ? 'Usina Solar (Geração)' : (p.type === 'cliente' ? 'Cliente Solar (Consumo)' : 'Casa de Aluguel');
-      document.getElementById('pubKwh').innerText = `${p.kwh || 0} kWh / mês`;
+      
+      const pubKwhEl = document.getElementById('pubKwh');
+      if (p.type === 'usina') {
+        document.getElementById('pubTypeLabel').innerText = 'Usina Solar (Geração)';
+        pubKwhEl.style.color = 'var(--usina)';
+        pubKwhEl.innerText = `${p.kwh || 0} kWh / mês`;
+      } else if (p.type === 'cliente') {
+        document.getElementById('pubTypeLabel').innerText = 'Cliente Solar (Consumo)';
+        pubKwhEl.style.color = '#10b981';
+        pubKwhEl.innerText = `${p.kwh || 0} kWh / mês`;
+      } else if (p.type === 'software') {
+        document.getElementById('pubTypeLabel').innerText = 'Cliente de Software';
+        pubKwhEl.style.color = 'var(--software)';
+        pubKwhEl.innerText = `Licença ${p.status || 'Ativa'}`;
+      } else {
+        document.getElementById('pubTypeLabel').innerText = 'Imóvel';
+        pubKwhEl.style.color = 'var(--aluguel)';
+        pubKwhEl.innerText = `Status: ${p.status || 'Alugada'}`;
+      }
       
       setupMapsButton('btnPubMaps', p.lat, p.lng);
-      
       document.getElementById('modalPublicView').classList.add('active');
     }
 
@@ -645,7 +656,6 @@
       document.getElementById('pointLng').value = p.lng;
       document.getElementById('pointName').value = p.name;
       document.getElementById('pointKwh').value = p.kwh || '';
-      document.getElementById('pointVal').value = p.val || '20';
       document.getElementById('pointNotes').value = p.notes || '';
       document.getElementById('pointOwnership').value = p.ownership || 'Proprio';
       document.getElementById('pointSourceUsina').value = p.sourceUsina || '';
@@ -655,6 +665,9 @@
       document.getElementById('btnDeletePoint').style.display = 'block';
 
       setType(p.type);
+      document.getElementById('pointVal').value = p.val || (p.type === 'cliente' ? '20' : '');
+      if (p.status) document.getElementById('pointStatus').value = p.status;
+
       setupMapsButton('btnFormMaps', p.lat, p.lng);
       updateFinanceDisplay();
       document.getElementById('modalForm').classList.add('active');
@@ -665,25 +678,64 @@
       document.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
       
       const rentalGrp = document.getElementById('rentalStatusGroup');
+      const statusSelect = document.getElementById('pointStatus');
+      const lblStatus = document.getElementById('lblStatus');
       const usinaSourceGrp = document.getElementById('usinaSourceGroup');
       const ownershipGrp = document.getElementById('ownershipGroup');
+      const locationGrp = document.getElementById('locationTypeGroup');
       const finCard = document.getElementById('financeCalcCard');
+      const kwhGrp = document.getElementById('kwhGroup');
+      const lblVal = document.getElementById('lblVal');
+      const lblName = document.getElementById('lblName');
 
-      if(type === 'aluguel') {
+      if (type === 'aluguel') {
+        lblName.innerText = 'Nome do Imóvel / Inquilino';
+        locationGrp.style.display = 'none';
         rentalGrp.style.display = 'block';
+        lblStatus.innerText = 'Status do Imóvel';
+        statusSelect.innerHTML = `
+          <option value="Alugada">Alugada</option>
+          <option value="Disponível">Disponível</option>
+          <option value="Manutenção">Em Reforma</option>
+        `;
         usinaSourceGrp.style.display = 'none';
         ownershipGrp.style.display = 'block';
         finCard.style.display = 'none';
-      } else if(type === 'cliente') {
+        kwhGrp.style.display = 'none';
+        lblVal.innerText = 'Valor do Aluguel (R$)';
+      } else if (type === 'software') {
+        lblName.innerText = 'Nome do Cliente / Empresa (Software)';
+        locationGrp.style.display = 'none';
+        rentalGrp.style.display = 'block';
+        lblStatus.innerText = 'Status da Licença';
+        statusSelect.innerHTML = `
+          <option value="Ativa">Ativa (Pagante)</option>
+          <option value="Teste">Período de Teste (Trial)</option>
+          <option value="Suspensa">Suspensa / Cancelada</option>
+        `;
+        usinaSourceGrp.style.display = 'none';
+        ownershipGrp.style.display = 'block';
+        finCard.style.display = 'none';
+        kwhGrp.style.display = 'none';
+        lblVal.innerText = 'Mensalidade da Licença (R$)';
+      } else if (type === 'cliente') {
+        lblName.innerText = 'Nome do Cliente Solar';
+        locationGrp.style.display = 'block';
         rentalGrp.style.display = 'none';
         usinaSourceGrp.style.display = 'block';
         ownershipGrp.style.display = 'none';
         finCard.style.display = 'block';
+        kwhGrp.style.display = 'block';
+        lblVal.innerText = 'Desconto (%)';
       } else {
+        lblName.innerText = 'Nome da Usina';
+        locationGrp.style.display = 'block';
         rentalGrp.style.display = 'none';
         usinaSourceGrp.style.display = 'none';
         ownershipGrp.style.display = 'block';
         finCard.style.display = 'none';
+        kwhGrp.style.display = 'block';
+        lblVal.innerText = 'Capacidade / Meta (%)';
       }
 
       const lat = parseFloat(document.getElementById('pointLat').value);
@@ -708,7 +760,6 @@
     document.getElementById('pointLocationType').addEventListener('change', updateFinanceDisplay);
     document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
 
-    // Operações de Cadastro com Planilha
     document.getElementById('btnSavePoint').addEventListener('click', async () => {
       const id = document.getElementById('pointId').value || Date.now().toString();
       const item = {
@@ -717,7 +768,7 @@
         lng: parseFloat(document.getElementById('pointLng').value),
         type: currentType,
         name: document.getElementById('pointName').value || 'Novo Ponto',
-        kwh: parseFloat(document.getElementById('pointKwh').value) || 0,
+        kwh: (currentType === 'usina' || currentType === 'cliente') ? (parseFloat(document.getElementById('pointKwh').value) || 0) : 0,
         val: parseFloat(document.getElementById('pointVal').value) || 0,
         ownership: document.getElementById('pointOwnership').value,
         sourceUsina: document.getElementById('pointSourceUsina').value,
@@ -760,7 +811,6 @@
       }
     });
 
-    // Botão Sincronizar (Funciona para todos)
     document.getElementById('btnSync').addEventListener('click', async () => {
       if (!scriptUrl) {
         document.getElementById('modalConfig').classList.add('active');
@@ -796,7 +846,11 @@
     });
 
     function updateStats() {
-      let ownGen = 0, socGen = 0, ownCons = 0, socCons = 0, totalLucro = 0;
+      let ownGen = 0, socGen = 0, ownCons = 0, socCons = 0;
+      let totalLucroSolar = 0;
+      let totalAluguelImoveis = 0;
+      let totalSoftwareMRR = 0;
+      let qtdSoftwareAtivo = 0;
 
       points.forEach(p => {
         if (p.type === 'usina') {
@@ -809,28 +863,41 @@
           else ownCons += p.kwh;
 
           const fin = computeFinances(p.kwh || 0, p.locationType !== 'rural');
-          totalLucro += fin.lucroLiquido;
+          totalLucroSolar += fin.lucroLiquido;
+        }
+        if (p.type === 'aluguel' && p.status === 'Alugada') {
+          totalAluguelImoveis += (p.val || 0);
+        }
+        if (p.type === 'software' && p.status === 'Ativa') {
+          totalSoftwareMRR += (p.val || 0);
+          qtdSoftwareAtivo++;
         }
       });
 
+      const receitaTotalGeral = totalLucroSolar + totalAluguelImoveis + totalSoftwareMRR;
+
       document.getElementById('summaryContent').innerHTML = `
         <div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:14px; border-radius:14px; margin-bottom:12px;">
-          <div style="font-size:11px; font-weight:800; color:#10b981;">LUCRO LÍQUIDO TOTAL MENSAL</div>
-          <div style="font-size:24px; font-weight:900; margin-top:2px;">R$ ${totalLucro.toFixed(2)}</div>
+          <div style="font-size:11px; font-weight:800; color:#10b981;">RESULTADO MENSAL CONSOLIDADO</div>
+          <div style="font-size:24px; font-weight:900; margin-top:2px;">R$ ${receitaTotalGeral.toFixed(2)}</div>
+          <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">Solar Líquido + Aluguéis + Licenças Software</div>
+        </div>
+
+        <div style="background:rgba(139,92,246,0.12); border:1px solid #8b5cf6; padding:12px; border-radius:12px; margin-bottom:10px;">
+          <div style="font-size:11px; font-weight:800; color:#8b5cf6;">LICENÇAS DE SOFTWARE (MRR)</div>
+          <div>Clientes Ativos: <strong>${qtdSoftwareAtivo}</strong></div>
+          <div style="font-weight:700; margin-top:2px;">Faturamento Mensal: R$ ${totalSoftwareMRR.toFixed(2)}</div>
+        </div>
+
+        <div style="background:rgba(59,130,246,0.12); border:1px solid #3b82f6; padding:12px; border-radius:12px; margin-bottom:10px;">
+          <div style="font-size:11px; font-weight:800; color:#3b82f6;">IMÓVEIS DE ALUGUEL</div>
+          <div style="font-weight:700;">Receita Imóveis Alugados: R$ ${totalAluguelImoveis.toFixed(2)}</div>
         </div>
 
         <div style="background:rgba(245,158,11,0.12); border:1px solid #f59e0b; padding:12px; border-radius:12px; margin-bottom:10px;">
-          <div style="font-size:11px; font-weight:800; color:#f59e0b;">MINHA USINA (PRÓPRIA)</div>
-          <div>Geração: ${ownGen.toLocaleString()} kWh/mês</div>
-          <div>Consumo Clientes: ${ownCons.toLocaleString()} kWh/mês</div>
-          <div style="font-weight:700;">Saldo: ${(ownGen - ownCons).toLocaleString()} kWh/mês</div>
-        </div>
-
-        <div style="background:rgba(59,130,246,0.12); border:1px solid #3b82f6; padding:12px; border-radius:12px;">
-          <div style="font-size:11px; font-weight:800; color:#3b82f6;">USINA EM SOCIEDADE (SÓCIO)</div>
-          <div>Geração: ${socGen.toLocaleString()} kWh/mês</div>
-          <div>Consumo Clientes: ${socCons.toLocaleString()} kWh/mês</div>
-          <div style="font-weight:700;">Saldo Sociedade: ${(socGen - socCons).toLocaleString()} kWh/mês</div>
+          <div style="font-size:11px; font-weight:800; color:#f59e0b;">ENERGIA SOLAR (LUCRO LÍQUIDO: R$ ${totalLucroSolar.toFixed(2)})</div>
+          <div style="font-size:12px; margin-top:4px;"><strong>Própria:</strong> Gera ${ownGen.toLocaleString()} | Consome ${ownCons.toLocaleString()} (Saldo: ${(ownGen - ownCons).toLocaleString()} kWh)</div>
+          <div style="font-size:12px; margin-top:2px;"><strong>Sociedade:</strong> Gera ${socGen.toLocaleString()} | Consome ${socCons.toLocaleString()} (Saldo: ${(socGen - socCons).toLocaleString()} kWh)</div>
         </div>
       `;
     }
@@ -843,8 +910,15 @@
         item.className = 'list-item';
         
         let color = '#f59e0b';
-        if (p.type === 'aluguel') color = '#3b82f6';
-        if (p.type === 'cliente') {
+        let subtitle = `${p.kwh} kWh/mês ${p.sourceUsina ? `| Usina: ${p.sourceUsina}` : ''}`;
+
+        if (p.type === 'aluguel') {
+          color = '#3b82f6';
+          subtitle = `Imóvel (${p.status || 'Alugada'}) ${isAdminUnlocked ? `| R$ ${(p.val || 0).toFixed(2)}` : ''}`;
+        } else if (p.type === 'software') {
+          color = '#8b5cf6';
+          subtitle = `Software (${p.status || 'Ativa'}) ${isAdminUnlocked ? `| R$ ${(p.val || 0).toFixed(2)}/mês` : ''}`;
+        } else if (p.type === 'cliente') {
           const u = points.find(item => item.type === 'usina' && item.name === p.sourceUsina);
           color = (u && u.ownership === 'Sociedade') ? '#10b981' : '#f59e0b';
         }
@@ -852,7 +926,7 @@
         item.innerHTML = `
           <div>
             <div style="font-weight:800; font-size:14px; color:${color};">${p.name}</div>
-            <div style="font-size:12px; color:var(--text-muted);">${p.kwh} kWh/mês ${p.sourceUsina ? `| Usina: ${p.sourceUsina}` : ''}</div>
+            <div style="font-size:12px; color:var(--text-muted);">${subtitle}</div>
           </div>
           <button class="btn-act" style="padding:6px 12px; font-size:12px;">Ver</button>
         `;
@@ -869,7 +943,6 @@
     document.getElementById('btnList').addEventListener('click', () => { renderList(); document.getElementById('modalList').classList.add('active'); });
     document.getElementById('btnSummary').addEventListener('click', () => { updateStats(); document.getElementById('modalSummary').classList.add('active'); });
 
-    // Inicia carregando os marcadores limpos
     renderMarkers();
   </script>
   <script>
