@@ -15,6 +15,8 @@
   <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- jsPDF para geração de PDF A4 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
@@ -49,13 +51,13 @@
       top: calc(env(safe-area-inset-top) + 12px);
       left: 12px; right: 12px; z-index: 1000;
       background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--border);
-      border-radius: 16px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center;
+      border-radius: 16px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 6px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
-    .brand { font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px; user-select: none; }
+    .brand { font-size: 13px; font-weight: 800; display: flex; align-items: center; gap: 6px; user-select: none; white-space: nowrap; }
     .brand i { color: var(--usina); }
-    .mode-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: rgba(245,158,11,0.2); color: var(--usina); border: 1px solid rgba(245,158,11,0.4); display: none; }
-    .offline-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 8px; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); display: none; }
+    .mode-badge { font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 8px; background: rgba(245,158,11,0.2); color: var(--usina); border: 1px solid rgba(245,158,11,0.4); display: none; }
+    .offline-badge { font-size: 10px; font-weight: 800; padding: 3px 7px; border-radius: 8px; background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); display: none; }
 
     /* Map Controls */
     .map-controls {
@@ -89,14 +91,15 @@
     .btn-act {
       flex: 1; pointer-events: auto; background: var(--card-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
       border: 1px solid var(--border); color: var(--text); padding: 12px; border-radius: 14px;
-      font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+      font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer;
+      white-space: nowrap;
     }
 
     /* Crosshair Target */
     .crosshair { position: absolute; inset: 0; z-index: 1500; pointer-events: none; display: none; align-items: center; justify-content: center; flex-direction: column; }
     .crosshair.active { display: flex; }
     .crosshair-pin { width: 42px; height: 42px; border: 3px solid #2563eb; border-radius: 50%; background: rgba(37,99,235,0.2); }
-    .crosshair-btn { pointer-events: auto; margin-top: 16px; background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 800; cursor: pointer; }
+    .crosshair-btn { pointer-events: auto; margin-top: 16px; background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 24px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; }
 
     /* Modals */
     .modal { position: fixed; inset: 0; z-index: 2000; background: rgba(2,6,23,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; justify-content: center; align-items: flex-end; opacity: 0; pointer-events: none; transition: 0.25s ease; }
@@ -135,7 +138,8 @@
     .type-btn.active[data-type="aluguel"] { background: rgba(59, 130, 246, 0.18); border-color: var(--aluguel); color: var(--aluguel); }
     .type-btn.active[data-type="software"] { background: rgba(139, 92, 246, 0.18); border-color: var(--software); color: var(--software); }
 
-    .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px; }
+    .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-main:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-danger { width: 100%; background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.25); padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 8px; }
     .btn-maps { width: 100%; background: #10b981; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
     .btn-maps:hover { background: #059669; }
@@ -162,6 +166,14 @@
       font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,0.1); color: #fff;
     }
     .list-item { background: #020617; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+
+    /* Badge Legenda PDF */
+    .pdf-legend-preview {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
+      background: #020617; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
+    }
+    .pdf-leg-item { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+    .pdf-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -191,9 +203,10 @@
       <span class="mode-badge" id="modeBadge">ADM</span>
       <span class="offline-badge" id="offlineBadge">OFFLINE</span>
     </div>
-    <div style="display:flex; gap:6px;">
-      <button class="btn-act" id="btnConfig" style="padding:6px 10px; font-size:11px;"><i data-lucide="link"></i> Planilha</button>
-      <button class="btn-act" id="btnSummary" style="padding:6px 10px; font-size:11px; display:none;"><i data-lucide="pie-chart"></i> Resumo</button>
+    <div style="display:flex; gap:5px; align-items:center;">
+      <button class="btn-act" id="btnOpenPdf" style="padding:6px 9px; font-size:11px; display:none; border-color:rgba(245,158,11,0.5); color:#fbbf24;"><i data-lucide="printer" style="width:14px;height:14px;"></i> PDF A4</button>
+      <button class="btn-act" id="btnConfig" style="padding:6px 9px; font-size:11px;"><i data-lucide="link" style="width:14px;height:14px;"></i> Planilha</button>
+      <button class="btn-act" id="btnSummary" style="padding:6px 9px; font-size:11px; display:none;"><i data-lucide="pie-chart" style="width:14px;height:14px;"></i> Resumo</button>
     </div>
   </div>
 
@@ -215,6 +228,54 @@
         <input type="password" class="form-input" id="adminPasswordInput" placeholder="Sua senha...">
       </div>
       <button class="btn-main" id="btnCheckAuth">Acessar Modo Empresário</button>
+    </div>
+  </div>
+
+  <!-- Modal Exclusivo Proprietário: Gerador de PDF A4 por Cidade -->
+  <div class="modal" id="modalPdfExport">
+    <div class="card">
+      <div class="card-head">
+        <h3>Relatório A4 de Locações por Cidade</h3>
+        <i data-lucide="x" style="cursor:pointer;" onclick="closeModals()"></i>
+      </div>
+
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.4;">
+        Gera <strong>1 folha A4 por cidade</strong> contendo o print do mapa de satélite com os pinos numerados (Energia, Casa e Software) e a legenda completa de clientes para histórico anual.
+      </p>
+
+      <div class="pdf-legend-preview">
+        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#10b981;"></span> Energia Solar</div>
+        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#2563eb;"></span> Aluguel de Casa</div>
+        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#7c3aed;"></span> Software FlowNest</div>
+        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#f59e0b;"></span> Usina Geradora</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ano de Referência (PDF)</label>
+          <input type="number" class="form-input" id="pdfYearInput" min="2020" max="2099">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Filtrar Cidade</label>
+          <select class="form-select" id="pdfCityFilter">
+            <option value="ALL">Todas as Cidades (1 pág/cidade)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Itens no Mapa e na Legenda</label>
+        <select class="form-select" id="pdfScopeFilter">
+          <option value="RENTALS_ONLY">Somente Locações (Energia, Imóveis e Software)</option>
+          <option value="RENTALS_AND_USINAS">Locações + Usinas Solares da Cidade</option>
+        </select>
+      </div>
+
+      <div id="pdfProgressBox" style="display:none; background:#020617; border:1px solid #2563eb; border-radius:12px; padding:12px; margin-bottom:12px; font-size:13px; color:#93c5fd; text-align:center; font-weight:700;">
+        Preparando captura das cidades...
+      </div>
+
+      <button class="btn-main" id="btnGeneratePdfA4"><i data-lucide="file-down"></i> Gerar PDF A4 para Impressão</button>
     </div>
   </div>
 
@@ -251,9 +312,15 @@
 
       <input type="hidden" id="pointId"><input type="hidden" id="pointLat"><input type="hidden" id="pointLng">
 
-      <div class="form-group">
-        <label class="form-label" id="lblName">Nome do Ponto / Cliente</label>
-        <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina 1, Casa do João ou Empresa X">
+      <div class="form-row">
+        <div class="form-group" style="flex:1.4;">
+          <label class="form-label" id="lblName">Nome do Ponto / Cliente</label>
+          <input type="text" class="form-input" id="pointName" placeholder="Ex: Usina 1, Casa do João">
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Cidade (Para PDF A4)</label>
+          <input type="text" class="form-input" id="pointCity" placeholder="Auto / Ex: Goianésia - GO">
+        </div>
       </div>
 
       <div class="form-group" id="locationTypeGroup">
@@ -417,7 +484,6 @@
       localStorage.setItem('solar_pending_queue', JSON.stringify(pendingSyncQueue));
     }
 
-    // Monitor de Conexão (Online / Offline)
     function updateOnlineStatus() {
       const badge = document.getElementById('offlineBadge');
       if (!navigator.onLine) {
@@ -454,20 +520,21 @@
       ? [savedViewport.lng, savedViewport.lat]
       : (points.length > 0 ? [points[0].lng, points[0].lat] : [-49.1179, -15.3181]);
 
+    // preserveDrawingBuffer: true permite capturar o mapa para o PDF A4
     const map = new maplibregl.Map({
       container: 'map',
       style: cleanSatelliteStyle,
       center: initialCenter,
       zoom: (savedViewport && savedViewport.zoom) ? savedViewport.zoom : 14,
       pitch: is3d ? 60 : 0,
-      bearing: is3d ? -20 : 0
+      bearing: is3d ? -20 : 0,
+      preserveDrawingBuffer: true
     });
 
     if (is3d) {
       document.getElementById('btn3d').style.background = '#2563eb';
     }
 
-    // Salva automaticamente a posição do mapa sempre que você mover ou der zoom
     map.on('moveend', () => {
       const c = map.getCenter();
       localStorage.setItem('solar_map_viewport', JSON.stringify({
@@ -480,6 +547,23 @@
 
     lucide.createIcons();
     updateOnlineStatus();
+
+    // ========================================================
+    // 🌍 GEOCODIFICAÇÃO REVERSA (DETECTA CIDADE AUTOMATICAMENTE)
+    // ========================================================
+    async function detectCityFromCoords(lat, lng) {
+      if (!navigator.onLine) return '';
+      try {
+        const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=pt`);
+        const data = await res.json();
+        const city = data.city || data.locality || '';
+        const stateCode = data.principalSubdivisionCode ? data.principalSubdivisionCode.split('-').pop() : '';
+        if (city) {
+          return stateCode ? `${city} - ${stateCode}` : city;
+        }
+      } catch (e) {}
+      return '';
+    }
 
     document.getElementById('btn3d').addEventListener('click', () => {
       is3d = !is3d;
@@ -504,6 +588,7 @@
         
         document.getElementById('modeBadge').style.display = 'inline-block';
         document.getElementById('btnSummary').style.display = 'flex';
+        document.getElementById('btnOpenPdf').style.display = 'flex';
         document.getElementById('btnToggleCrosshair').style.display = 'flex';
         
         const btnAuth = document.getElementById('btnAdminAuth');
@@ -572,7 +657,6 @@
         iconSvg = '<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1m-6 0h6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
       } else if (point.type === 'software') {
         pinColor = '#8b5cf6';
-        // Ícone Microchip IA (cpu) limpo para o pino
         iconSvg = '<rect x="5" y="5" width="14" height="14" rx="2" stroke="#fff" stroke-width="2" fill="none"/><rect x="9" y="9" width="6" height="6" stroke="#fff" stroke-width="1.8" fill="none"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
       } else if (point.type === 'cliente') {
         iconSvg = '<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
@@ -709,11 +793,12 @@
       openNewForm(center.lat, center.lng);
     });
 
-    function openNewForm(lat, lng) {
+    async function openNewForm(lat, lng) {
       document.getElementById('pointId').value = '';
       document.getElementById('pointLat').value = lat;
       document.getElementById('pointLng').value = lng;
       document.getElementById('pointName').value = '';
+      document.getElementById('pointCity').value = '';
       document.getElementById('pointKwh').value = '';
       document.getElementById('pointVal').value = '20';
       document.getElementById('pointNotes').value = '';
@@ -722,15 +807,21 @@
       setType('usina');
       setupMapsButton('btnFormMaps', lat, lng);
       document.getElementById('modalForm').classList.add('active');
+
+      const detectedCity = await detectCityFromCoords(lat, lng);
+      if (detectedCity && !document.getElementById('pointCity').value) {
+        document.getElementById('pointCity').value = detectedCity;
+      }
     }
 
-    function openEditForm(id) {
+    async function openEditForm(id) {
       const p = points.find(item => item.id.toString() === id.toString());
       if (!p) return;
       document.getElementById('pointId').value = p.id;
       document.getElementById('pointLat').value = p.lat;
       document.getElementById('pointLng').value = p.lng;
       document.getElementById('pointName').value = p.name;
+      document.getElementById('pointCity').value = p.city || '';
       document.getElementById('pointKwh').value = p.kwh || '';
       document.getElementById('pointNotes').value = p.notes || '';
       document.getElementById('pointOwnership').value = p.ownership || 'Proprio';
@@ -747,6 +838,13 @@
       setupMapsButton('btnFormMaps', p.lat, p.lng);
       updateFinanceDisplay();
       document.getElementById('modalForm').classList.add('active');
+
+      if (!p.city) {
+        const detectedCity = await detectCityFromCoords(p.lat, p.lng);
+        if (detectedCity && !document.getElementById('pointCity').value) {
+          document.getElementById('pointCity').value = detectedCity;
+        }
+      }
     }
 
     function setType(type) {
@@ -836,7 +934,6 @@
     document.getElementById('pointLocationType').addEventListener('change', updateFinanceDisplay);
     document.querySelectorAll('.type-btn').forEach(b => b.addEventListener('click', () => setType(b.dataset.type)));
 
-    // Envia operações pendentes caso tenham sido feitas offline
     async function flushPendingQueue() {
       if (!scriptUrl || !navigator.onLine || pendingSyncQueue.length === 0) return;
       const queueCopy = [...pendingSyncQueue];
@@ -860,10 +957,19 @@
 
     document.getElementById('btnSavePoint').addEventListener('click', async () => {
       const id = document.getElementById('pointId').value || Date.now().toString();
+      const lat = parseFloat(document.getElementById('pointLat').value);
+      const lng = parseFloat(document.getElementById('pointLng').value);
+      let cityVal = document.getElementById('pointCity').value.trim();
+
+      if (!cityVal && navigator.onLine) {
+        cityVal = await detectCityFromCoords(lat, lng);
+      }
+
       const item = {
         id,
-        lat: parseFloat(document.getElementById('pointLat').value),
-        lng: parseFloat(document.getElementById('pointLng').value),
+        lat,
+        lng,
+        city: cityVal || 'Cidade Não Informada',
         type: currentType,
         name: document.getElementById('pointName').value || 'Novo Ponto',
         kwh: (currentType === 'usina' || currentType === 'cliente') ? (parseFloat(document.getElementById('pointKwh').value) || 0) : 0,
@@ -1027,6 +1133,520 @@
     }
 
     // ========================================================
+    // 📄 GERADOR DE RELATÓRIO A4 EM PDF POR CIDADE (PROPRIETÁRIO)
+    // ========================================================
+    document.getElementById('btnOpenPdf').addEventListener('click', async () => {
+      if (!isAdminUnlocked) return;
+
+      document.getElementById('pdfYearInput').value = new Date().getFullYear();
+      const citySelect = document.getElementById('pdfCityFilter');
+      citySelect.innerHTML = '<option value="ALL">Todas as Cidades (1 folha A4 / cidade)</option>';
+
+      // Resolve cidades pendentes antes de popular o filtro
+      let updated = false;
+      for (const p of points) {
+        if ((!p.city || p.city === 'Cidade Não Informada') && navigator.onLine) {
+          const c = await detectCityFromCoords(p.lat, p.lng);
+          if (c) {
+            p.city = c;
+            updated = true;
+          }
+        }
+      }
+      if (updated) saveToLocalStorage();
+
+      const uniqueCities = [...new Set(points.map(p => (p.city || 'Cidade Não Informada').trim()))].sort();
+      uniqueCities.forEach(c => {
+        citySelect.innerHTML += `<option value="${c}">${c}</option>`;
+      });
+
+      document.getElementById('modalPdfExport').classList.add('active');
+      lucide.createIcons();
+    });
+
+    function waitForMapIdle(timeoutMs = 3500) {
+      return new Promise((resolve) => {
+        let done = false;
+        const finish = () => {
+          if (!done) {
+            done = true;
+            setTimeout(resolve, 250);
+          }
+        };
+        map.once('idle', finish);
+        setTimeout(finish, timeoutMs);
+      });
+    }
+
+    function drawPinOnCanvas(ctx, x, y, indexNumber, point) {
+      let color = '#10b981';
+      let categoryCode = 'E'; // Energia
+
+      if (point.type === 'usina') {
+        color = '#f59e0b';
+        categoryCode = 'U';
+      } else if (point.type === 'aluguel') {
+        color = '#2563eb';
+        categoryCode = 'C'; // Casa / Imóvel
+      } else if (point.type === 'software') {
+        color = '#7c3aed';
+        categoryCode = 'S'; // Software FlowNest
+      } else if (point.type === 'cliente') {
+        color = '#10b981';
+        categoryCode = 'E'; // Energia Solar
+      }
+
+      ctx.save();
+      // Sombra do pino
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetY = 4;
+
+      // Corpo do pino (gota apontando exatamente para (x, y))
+      const r = 20;
+      const tipY = y;
+      const centerY = y - 34;
+
+      ctx.beginPath();
+      ctx.arc(x, centerY, r, Math.PI * 0.8, Math.PI * 2.2, false);
+      ctx.lineTo(x, tipY);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffffff';
+      ctx.stroke();
+
+      ctx.shadowColor = 'transparent';
+
+      // Círculo interno escuro
+      ctx.beginPath();
+      ctx.arc(x, centerY, 13, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+
+      // Ícone vetorial interno (Seta/Raio, Casa ou Chip)
+      ctx.strokeStyle = '#ffffff';
+      ctx.fillStyle = '#ffffff';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (point.type === 'cliente' || point.type === 'usina') {
+        // Seta/Raio de Energia
+        ctx.beginPath();
+        ctx.moveTo(x + 2, centerY - 7);
+        ctx.lineTo(x - 4, centerY + 1);
+        ctx.lineTo(x + 1, centerY + 1);
+        ctx.lineTo(x - 2, centerY + 7);
+        ctx.lineTo(x + 4, centerY - 1);
+        ctx.lineTo(x - 1, centerY - 1);
+        ctx.closePath();
+        ctx.fill();
+      } else if (point.type === 'aluguel') {
+        // Casa (Aluguel de Imóvel)
+        ctx.beginPath();
+        ctx.moveTo(x - 6, centerY);
+        ctx.lineTo(x, centerY - 6);
+        ctx.lineTo(x + 6, centerY);
+        ctx.moveTo(x - 4, centerY - 1);
+        ctx.lineTo(x - 4, centerY + 5);
+        ctx.lineTo(x + 4, centerY + 5);
+        ctx.lineTo(x + 4, centerY - 1);
+        ctx.stroke();
+      } else if (point.type === 'software') {
+        // Chip Software IA
+        ctx.strokeRect(x - 5, centerY - 5, 10, 10);
+        ctx.fillRect(x - 2, centerY - 2, 4, 4);
+      }
+
+      // Etiqueta numérica superior para cruzar com a legenda A4
+      const badgeText = `#${indexNumber}`;
+      ctx.font = 'bold 13px sans-serif';
+      const textW = ctx.measureText(badgeText).width + 10;
+      const badgeH = 18;
+      const badgeX = x - textW / 2;
+      const badgeY = centerY - r - badgeH - 3;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(badgeX, badgeY, textW, badgeH, 6);
+      ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = color;
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(badgeText, x, badgeY + badgeH / 2 + 0.5);
+
+      ctx.restore();
+    }
+
+    async function captureCityMapImage(cityPoints) {
+      const bounds = new maplibregl.LngLatBounds();
+      cityPoints.forEach(p => bounds.extend([p.lng, p.lat]));
+
+      if (cityPoints.length === 1) {
+        map.jumpTo({
+          center: [cityPoints[0].lng, cityPoints[0].lat],
+          zoom: 16.5,
+          pitch: 0,
+          bearing: 0
+        });
+      } else {
+        map.fitBounds(bounds, {
+          padding: { top: 90, bottom: 90, left: 90, right: 90 },
+          maxZoom: 16.2,
+          pitch: 0,
+          bearing: 0,
+          animate: false
+        });
+      }
+
+      await waitForMapIdle(3500);
+
+      const glCanvas = map.getCanvas();
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = glCanvas.width;
+      outCanvas.height = glCanvas.height;
+      const ctx = outCanvas.getContext('2d');
+
+      // Desenha o mapa de satélite base
+      ctx.drawImage(glCanvas, 0, 0);
+
+      // Escala física (Retina/DPI) vs CSS
+      const scaleX = glCanvas.width / glCanvas.clientWidth;
+      const scaleY = glCanvas.height / glCanvas.clientHeight;
+
+      // Desenha cada pino numerado exatamente sobre a coordenada projetada
+      cityPoints.forEach((p, idx) => {
+        const pt = map.project([p.lng, p.lat]);
+        drawPinOnCanvas(ctx, pt.x * scaleX, pt.y * scaleY, idx + 1, p);
+      });
+
+      // Selo discreto no canto inferior do mapa
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(14, outCanvas.height - 42, 340, 28);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText('MAPA DE LOCALIZAÇÃO DOS ATIVOS • VISTA SUPERIOR', 24, outCanvas.height - 23);
+
+      return {
+        dataUrl: outCanvas.toDataURL('image/jpeg', 0.92),
+        aspectRatio: outCanvas.width / outCanvas.height
+      };
+    }
+
+    document.getElementById('btnGeneratePdfA4').addEventListener('click', async () => {
+      if (!isAdminUnlocked) return;
+
+      const btn = document.getElementById('btnGeneratePdfA4');
+      const progressBox = document.getElementById('pdfProgressBox');
+      const selectedYear = document.getElementById('pdfYearInput').value || new Date().getFullYear();
+      const selectedCity = document.getElementById('pdfCityFilter').value;
+      const scope = document.getElementById('pdfScopeFilter').value;
+
+      // Filtra os pontos elegíveis (Locações: Energia, Casa/Imóvel, Software + opcional Usinas)
+      const eligibleTypes = scope === 'RENTALS_AND_USINAS'
+        ? ['cliente', 'aluguel', 'software', 'usina']
+        : ['cliente', 'aluguel', 'software'];
+
+      let targetPoints = points.filter(p => eligibleTypes.includes(p.type));
+
+      if (targetPoints.length === 0) {
+        alert('Nenhum ponto de locação cadastrado para gerar o PDF.');
+        return;
+      }
+
+      btn.disabled = true;
+      progressBox.style.display = 'block';
+
+      // Salva estado atual do mapa para restaurar depois
+      const prevCenter = map.getCenter();
+      const prevZoom = map.getZoom();
+      const prevPitch = map.getPitch();
+      const prevBearing = map.getBearing();
+
+      try {
+        // Garante que todos os pontos tenham cidade preenchida
+        for (const p of targetPoints) {
+          if (!p.city || p.city === 'Cidade Não Informada') {
+            progressBox.innerText = `Identificando cidade de "${p.name}"...`;
+            const detected = await detectCityFromCoords(p.lat, p.lng);
+            if (detected) p.city = detected;
+          }
+        }
+        saveToLocalStorage();
+
+        // Agrupa pontos por cidade
+        const cityMap = {};
+        targetPoints.forEach(p => {
+          const cName = (p.city || 'Cidade Não Informada').trim();
+          if (selectedCity !== 'ALL' && cName !== selectedCity) return;
+          if (!cityMap[cName]) cityMap[cName] = [];
+          cityMap[cName].push(p);
+        });
+
+        const cityNames = Object.keys(cityMap).sort();
+        if (cityNames.length === 0) {
+          alert('Nenhuma locação encontrada para o filtro selecionado.');
+          return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pageW = 210;
+        const pageH = 297;
+        const margin = 12;
+        const contentW = pageW - margin * 2;
+        const emissionDate = new Date().toLocaleDateString('pt-BR');
+
+        for (let cIdx = 0; cIdx < cityNames.length; cIdx++) {
+          const cityName = cityNames[cIdx];
+          const cityItems = cityMap[cityName];
+
+          progressBox.innerText = `Capturando mapa A4 (${cIdx + 1}/${cityNames.length}): ${cityName}...`;
+
+          if (cIdx > 0) doc.addPage('a4', 'portrait');
+
+          // Captura o print do mapa daquela cidade com os pinos numerados
+          const mapShot = await captureCityMapImage(cityItems);
+
+          // --- CABEÇALHO EXECUTIVO A4 ---
+          doc.setFillColor(15, 23, 42);
+          doc.roundedRect(margin, 10, contentW, 24, 3, 3, 'F');
+
+          doc.setTextColor(245, 158, 11);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.5);
+          doc.text('RELATÓRIO PATRIMONIAL & LOCAÇÕES POR CIDADE (VERSÃO PROPRIETÁRIO)', margin + 5, 16.5);
+
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(15);
+          doc.text(cityName.toUpperCase(), margin + 5, 24.5);
+
+          doc.setTextColor(148, 163, 184);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.text(`SolarInvest • Imóveis • FlowNest IA  |  Emitido em ${emissionDate}`, margin + 5, 30.5);
+
+          // Selo de ANO BASE no canto direito do cabeçalho (para comparação anual)
+          doc.setFillColor(37, 99, 235);
+          doc.roundedRect(pageW - margin - 40, 13.5, 35, 17, 2.5, 2.5, 'F');
+          doc.setTextColor(219, 234, 254);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(7.5);
+          doc.text('ANO BASE', pageW - margin - 22.5, 19, { align: 'center' });
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(14);
+          doc.text(`${selectedYear}`, pageW - margin - 22.5, 27, { align: 'center' });
+
+          // --- CÁLCULOS RESUMO DA CIDADE ---
+          let cityEnergiaKwh = 0;
+          let cityEnergiaReceita = 0;
+          let cityCasaReceita = 0;
+          let citySoftwareReceita = 0;
+
+          cityItems.forEach(item => {
+            if (item.type === 'cliente') {
+              cityEnergiaKwh += (item.kwh || 0);
+              const fin = computeFinances(item.kwh || 0, item.locationType !== 'rural');
+              cityEnergiaReceita += fin.faturamentoBruto;
+            } else if (item.type === 'aluguel' && item.status === 'Alugada') {
+              cityCasaReceita += (item.val || 0);
+            } else if (item.type === 'software' && item.status === 'Ativa') {
+              citySoftwareReceita += (item.val || 0);
+            }
+          });
+          const cityTotalMensal = cityEnergiaReceita + cityCasaReceita + citySoftwareReceita;
+
+          // --- FAIXA DE INDICADORES (KPIs) ---
+          const kpiY = 37;
+          const kpiW = (contentW - 9) / 4;
+          const kpis = [
+            { title: 'ATIVOS NA CIDADE', val: `${cityItems.length} pontos`, color: [15, 23, 42] },
+            { title: 'ENERGIA SOLAR', val: `${cityEnergiaKwh} kWh`, color: [16, 185, 129] },
+            { title: 'IMÓVEIS / SOFTWARE', val: `R$ ${(cityCasaReceita + citySoftwareReceita).toFixed(2)}`, color: [37, 99, 235] },
+            { title: 'RECEITA BRUTA CIDADE', val: `R$ ${cityTotalMensal.toFixed(2)}`, color: [245, 158, 11] }
+          ];
+
+          kpis.forEach((k, i) => {
+            const kx = margin + i * (kpiW + 3);
+            doc.setFillColor(248, 250, 252);
+            doc.setDrawColor(203, 213, 225);
+            doc.roundedRect(kx, kpiY, kpiW, 14, 2, 2, 'FD');
+
+            doc.setTextColor(100, 116, 139);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(6.5);
+            doc.text(k.title, kx + 3, kpiY + 5);
+
+            doc.setTextColor(...k.color);
+            doc.setFontSize(9.5);
+            doc.text(k.val, kx + 3, kpiY + 11.2);
+          });
+
+          // --- IMAGEM DO MAPA CAPTURADO ---
+          const mapBoxY = 54;
+          const mapBoxH = 96; // Proporção ideal para caber mapa + legenda na mesma folha A4
+          doc.setDrawColor(148, 163, 184);
+          doc.setLineWidth(0.4);
+          doc.rect(margin, mapBoxY, contentW, mapBoxH);
+          doc.addImage(mapShot.dataUrl, 'JPEG', margin + 0.5, mapBoxY + 0.5, contentW - 1, mapBoxH - 1);
+
+          // --- BARRA DE LEGENDA VISUAL DOS PINOS ---
+          const keyY = mapBoxY + mapBoxH + 2.5;
+          doc.setFillColor(241, 245, 249);
+          doc.roundedRect(margin, keyY, contentW, 8, 1.5, 1.5, 'F');
+
+          const legendKeys = [
+            { label: 'Energia Solar (Raio)', rgb: [16, 185, 129] },
+            { label: 'Aluguel de Casa (Imóvel)', rgb: [37, 99, 235] },
+            { label: 'Software FlowNest (IA)', rgb: [124, 58, 237] },
+            { label: 'Usina Geradora', rgb: [245, 158, 11] }
+          ];
+
+          let keyCursorX = margin + 4;
+          legendKeys.forEach(lk => {
+            doc.setFillColor(...lk.rgb);
+            doc.circle(keyCursorX + 2, keyY + 4, 2.2, 'F');
+            doc.setTextColor(30, 41, 59);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7.5);
+            doc.text(lk.label, keyCursorX + 6, keyY + 5.1);
+            keyCursorX += 46;
+          });
+
+          // --- TABELA LEGENDA DE CLIENTES E O QUE ALUGAM ---
+          let tableY = keyY + 11.5;
+          doc.setTextColor(15, 23, 42);
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(10);
+          doc.text(`LEGENDA DE CLIENTES E CONTRATOS — ${cityName.toUpperCase()} (${selectedYear})`, margin, tableY);
+
+          tableY += 3;
+          // Cabeçalho da Tabela
+          doc.setFillColor(30, 41, 59);
+          doc.rect(margin, tableY, contentW, 7, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(7.5);
+
+          doc.text('PINO', margin + 2.5, tableY + 4.8);
+          doc.text('TIPO DE LOCAÇÃO', margin + 15, tableY + 4.8);
+          doc.text('CLIENTE / IDENTIFICAÇÃO', margin + 53, tableY + 4.8);
+          doc.text('O QUE ALUGA / DETALHES', margin + 108, tableY + 4.8);
+          doc.text('VALOR MENSAL', pageW - margin - 3, tableY + 4.8, { align: 'right' });
+
+          tableY += 7;
+
+          cityItems.forEach((item, idx) => {
+            // Quebra de página de segurança se houver muitos itens na mesma cidade
+            if (tableY > pageH - 18) {
+              doc.addPage('a4', 'portrait');
+              tableY = 16;
+            }
+
+            const isEven = idx % 2 === 0;
+            doc.setFillColor(isEven ? 255 : 248, isEven ? 255 : 250, isEven ? 255 : 252);
+            doc.setDrawColor(226, 232, 240);
+            doc.rect(margin, tableY, contentW, 7.2, 'FD');
+
+            let tipoTexto = 'Energia Solar';
+            let badgeRgb = [16, 185, 129];
+            let detalheTexto = '';
+            let valorTexto = '';
+
+            if (item.type === 'cliente') {
+              tipoTexto = 'Energia Solar';
+              badgeRgb = [16, 185, 129];
+              const fin = computeFinances(item.kwh || 0, item.locationType !== 'rural');
+              detalheTexto = `Crédito Solar • ${item.kwh || 0} kWh/mês${item.sourceUsina ? ` (${item.sourceUsina})` : ''}`;
+              valorTexto = `R$ ${fin.faturamentoBruto.toFixed(2)}`;
+            } else if (item.type === 'aluguel') {
+              tipoTexto = 'Aluguel de Casa';
+              badgeRgb = [37, 99, 235];
+              detalheTexto = `Imóvel Residencial/Comercial • ${item.status || 'Alugada'}`;
+              valorTexto = `R$ ${(item.val || 0).toFixed(2)}`;
+            } else if (item.type === 'software') {
+              tipoTexto = 'Software FlowNest';
+              badgeRgb = [124, 58, 237];
+              detalheTexto = `Licença Sistema IA • ${item.status || 'Ativa'}`;
+              valorTexto = `R$ ${(item.val || 0).toFixed(2)}`;
+            } else if (item.type === 'usina') {
+              tipoTexto = 'Usina Geradora';
+              badgeRgb = [245, 158, 11];
+              detalheTexto = `Geração Própria/Sócio • ${item.kwh || 0} kWh/mês`;
+              valorTexto = 'Geração';
+            }
+
+            // Badge número do pino
+            doc.setFillColor(...badgeRgb);
+            doc.roundedRect(margin + 2, tableY + 1.3, 9, 4.6, 1, 1, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7);
+            doc.text(`#${idx + 1}`, margin + 6.5, tableY + 4.5, { align: 'center' });
+
+            // Tipo
+            doc.setTextColor(...badgeRgb);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(7.5);
+            doc.text(tipoTexto, margin + 15, tableY + 4.7);
+
+            // Nome do Cliente
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            const nomeCortado = (item.name || '-').substring(0, 28);
+            doc.text(nomeCortado, margin + 53, tableY + 4.7);
+
+            // O que aluga / Detalhes
+            doc.setTextColor(71, 85, 105);
+            doc.setFont('helvetica', 'normal');
+            const detCortado = detalheTexto.substring(0, 34);
+            doc.text(detCortado, margin + 108, tableY + 4.7);
+
+            // Valor
+            doc.setTextColor(15, 23, 42);
+            doc.setFont('helvetica', 'bold');
+            doc.text(valorTexto, pageW - margin - 3, tableY + 4.7, { align: 'right' });
+
+            tableY += 7.2;
+          });
+
+          // Rodapé da página A4
+          doc.setTextColor(148, 163, 184);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7.5);
+          doc.text(
+            `Comparativo Anual (${selectedYear}) • ${cityName} • Documento Exclusivo do Proprietário • Folha ${cIdx + 1} de ${cityNames.length}`,
+            pageW / 2,
+            pageH - 6,
+            { align: 'center' }
+          );
+        }
+
+        const fileSlug = selectedCity === 'ALL' ? 'Todas_Cidades' : selectedCity.replace(/[^a-zA-Z0-9]/g, '_');
+        doc.save(`Relatorio_Locacoes_${fileSlug}_${selectedYear}.pdf`);
+        closeModals();
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao gerar o PDF A4. Verifique se há pontos cadastrados e tente novamente.');
+      } finally {
+        // Restaura a visualização original do mapa
+        map.jumpTo({
+          center: prevCenter,
+          zoom: prevZoom,
+          pitch: prevPitch,
+          bearing: prevBearing
+        });
+        btn.disabled = false;
+        progressBox.style.display = 'none';
+      }
+    });
+
+    // ========================================================
     // 📋 LISTA ORGANIZADA POR CATEGORIA E POR USINA
     // ========================================================
     function createListItemHTML(p, color, subtitle) {
@@ -1084,14 +1704,12 @@
       const alugueis = points.filter(p => p.type === 'aluguel');
       const softwares = points.filter(p => p.type === 'software');
 
-      // 1. USINAS
       renderGroupSection(container, '☀️ Usinas Solares', '#f59e0b', usinas, (p) => ({
         color: '#f59e0b',
-        subtitle: `${p.kwh || 0} kWh/mês | ${p.ownership === 'Sociedade' ? 'Sociedade' : 'Própria'}`
+        subtitle: `${p.kwh || 0} kWh/mês | ${p.ownership === 'Sociedade' ? 'Sociedade' : 'Própria'}${p.city ? ` • ${p.city}` : ''}`
       }));
 
-      // 2. CLIENTES AGRUPADOS DINAMICAMENTE POR USINA (Usina 1, Usina 2, Usina 3...)
-      usinas.forEach((usina, index) => {
+      usinas.forEach((usina) => {
         const clientesDaUsina = clientes.filter(c => c.sourceUsina === usina.name);
         const isSoc = usina.ownership === 'Sociedade';
         const corGrupo = isSoc ? '#10b981' : '#f59e0b';
@@ -1099,28 +1717,25 @@
 
         renderGroupSection(container, tituloGrupo, corGrupo, clientesDaUsina, (p) => ({
           color: corGrupo,
-          subtitle: `${p.kwh || 0} kWh/mês`
+          subtitle: `${p.kwh || 0} kWh/mês${p.city ? ` • ${p.city}` : ''}`
         }));
       });
 
-      // Clientes que possuem nome de usina que não está na lista ou sem usina vinculada
       const nomesUsinasExistentes = usinas.map(u => u.name);
       const clientesSemUsina = clientes.filter(c => !c.sourceUsina || !nomesUsinasExistentes.includes(c.sourceUsina));
       renderGroupSection(container, '⚡ Clientes Solar (Sem Usina Vinculada)', '#94a3b8', clientesSemUsina, (p) => ({
         color: '#e2e8f0',
-        subtitle: `${p.kwh || 0} kWh/mês${p.sourceUsina ? ` | ${p.sourceUsina}` : ''}`
+        subtitle: `${p.kwh || 0} kWh/mês${p.sourceUsina ? ` | ${p.sourceUsina}` : ''}${p.city ? ` • ${p.city}` : ''}`
       }));
 
-      // 3. IMÓVEIS DE ALUGUEL
       renderGroupSection(container, '🏠 Imóveis (Aluguel)', '#3b82f6', alugueis, (p) => ({
         color: '#3b82f6',
-        subtitle: `${p.status || 'Alugada'}${isAdminUnlocked ? ` | R$ ${(p.val || 0).toFixed(2)}` : ''}`
+        subtitle: `${p.status || 'Alugada'}${isAdminUnlocked ? ` | R$ ${(p.val || 0).toFixed(2)}` : ''}${p.city ? ` • ${p.city}` : ''}`
       }));
 
-      // 4. FLOWNEST (IA) — LICENÇAS DE SOFTWARE
       renderGroupSection(container, '🤖 FlowNest (IA) — Licenças', '#8b5cf6', softwares, (p) => ({
         color: '#8b5cf6',
-        subtitle: `Licença ${p.status || 'Ativa'}${isAdminUnlocked ? ` | R$ ${(p.val || 0).toFixed(2)}/mês` : ''}`
+        subtitle: `Licença ${p.status || 'Ativa'}${isAdminUnlocked ? ` | R$ ${(p.val || 0).toFixed(2)}/mês` : ''}${p.city ? ` • ${p.city}` : ''}`
       }));
 
       lucide.createIcons();
@@ -1130,10 +1745,8 @@
     document.getElementById('btnList').addEventListener('click', () => { renderList(); document.getElementById('modalList').classList.add('active'); });
     document.getElementById('btnSummary').addEventListener('click', () => { updateStats(); document.getElementById('modalSummary').classList.add('active'); });
 
-    // Carrega imediatamente os marcadores do localStorage (funciona 100% offline)
     renderMarkers();
 
-    // Sincronização silenciosa automática ao abrir se houver internet e URL configurada
     if (navigator.onLine && scriptUrl) {
       flushPendingQueue().then(() => {
         fetch(scriptUrl)
@@ -1151,15 +1764,13 @@
   </script>
 
   <script>
-    // Service Worker com Cache Automático para Uso Offline
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
           .then(reg => console.log('SW registrado:', reg.scope))
           .catch(() => {
-            // Fallback: registra SW inline caso sw.js externo não exista no servidor
             const swCode = `
-              const CACHE_NAME = 'solar-flownest-v1';
+              const CACHE_NAME = 'solar-flownest-v2';
               self.addEventListener('install', (e) => {
                 self.skipWaiting();
               });
