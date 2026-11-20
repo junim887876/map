@@ -45,7 +45,7 @@
     
     #map { width: 100%; height: 100%; background: #020617; }
 
-    /* Container oculto de alta definição para renderização limpa do PDF A4 */
+    /* Palco oculto de alta definição (1600x880) para captura sem distorção */
     #pdfRenderStage {
       position: fixed;
       left: -9999px;
@@ -179,13 +179,12 @@
     }
     .list-item { background: #020617; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
 
-    /* Badge Legenda PDF */
+    /* Preview dos Pinos no Modal PDF */
     .pdf-legend-preview {
       display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
       background: #020617; border: 1px solid var(--border); border-radius: 12px; padding: 12px;
     }
     .pdf-leg-item { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
-    .pdf-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
   </style>
 </head>
 <body>
@@ -253,14 +252,14 @@
       </div>
 
       <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.45;">
-        Gera <strong>1 folha A4 por cidade</strong> em alta definição (sem distorção), com mapa nítido, marcadores numerados e legenda detalhada para arquivo anual.
+        Gera <strong>1 folha A4 por cidade</strong> com as setas originais do mapa (Raio de Energia, Sol de Usina, Casa e Hardware FlowNest) numeradas e legenda detalhada.
       </p>
 
       <div class="pdf-legend-preview">
-        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#059669;"></span> Energia Solar</div>
-        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#2563eb;"></span> Aluguel de Casa</div>
-        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#7c3aed;"></span> Software FlowNest</div>
-        <div class="pdf-leg-item"><span class="pdf-dot" style="background:#d97706;"></span> Usina Geradora</div>
+        <div class="pdf-leg-item"><i data-lucide="zap" style="width:15px;height:15px;color:#10b981;"></i> Energia (Raio)</div>
+        <div class="pdf-leg-item"><i data-lucide="sun" style="width:15px;height:15px;color:#f59e0b;"></i> Usina (Sol)</div>
+        <div class="pdf-leg-item"><i data-lucide="home" style="width:15px;height:15px;color:#3b82f6;"></i> Imóvel (Casa)</div>
+        <div class="pdf-leg-item"><i data-lucide="cpu" style="width:15px;height:15px;color:#8b5cf6;"></i> Licença (Hardware)</div>
       </div>
 
       <div class="form-row">
@@ -296,7 +295,7 @@
         Renderizando mapa HD...
       </div>
 
-      <button class="btn-main" id="btnGeneratePdfA4"><i data-lucide="file-down"></i> Gerar PDF A4 em Alta Definição</button>
+      <button class="btn-main" id="btnGeneratePdfA4"><i data-lucide="file-down"></i> Gerar PDF A4 com Setas Originais</button>
     </div>
   </div>
 
@@ -665,27 +664,32 @@
       lucide.createIcons();
     }
 
+    function getPointPinColor(point) {
+      if (point.type === 'usina') return '#f59e0b';
+      if (point.type === 'aluguel') return '#3b82f6';
+      if (point.type === 'software') return '#8b5cf6';
+      if (point.type === 'cliente') {
+        const sourceUsinaObj = points.find(p => p.type === 'usina' && p.name === point.sourceUsina);
+        if (sourceUsinaObj) {
+          return sourceUsinaObj.ownership === 'Sociedade' ? '#10b981' : '#f59e0b';
+        }
+        return '#10b981';
+      }
+      return '#f59e0b';
+    }
+
     function createPinElement(point) {
-      let pinColor = '#f59e0b';
+      const pinColor = getPointPinColor(point);
       let iconSvg = '';
 
       if (point.type === 'usina') {
-        pinColor = '#f59e0b';
         iconSvg = '<path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M18.364 18.364l-1.414-1.414M7.05 7.05L5.636 5.636M12 8a4 4 0 100 8 4 4 0 000-8z" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
       } else if (point.type === 'aluguel') {
-        pinColor = '#3b82f6';
         iconSvg = '<path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1m-6 0h6" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
       } else if (point.type === 'software') {
-        pinColor = '#8b5cf6';
         iconSvg = '<rect x="5" y="5" width="14" height="14" rx="2" stroke="#fff" stroke-width="2" fill="none"/><rect x="9" y="9" width="6" height="6" stroke="#fff" stroke-width="1.8" fill="none"/><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
       } else if (point.type === 'cliente') {
         iconSvg = '<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#fff" stroke-width="2" stroke-linecap="round" fill="none"/>';
-        const sourceUsinaObj = points.find(p => p.type === 'usina' && p.name === point.sourceUsina);
-        if (sourceUsinaObj) {
-          pinColor = sourceUsinaObj.ownership === 'Sociedade' ? '#10b981' : '#f59e0b';
-        } else {
-          pinColor = '#10b981';
-        }
       }
 
       const el = document.createElement('div');
@@ -1153,7 +1157,7 @@
     }
 
     // ========================================================
-    // 📄 GERADOR DE RELATÓRIO A4 HD POR CIDADE (PROPRIETÁRIO)
+    // 📄 GERADOR DE RELATÓRIO A4 HD COM SETAS ORIGINAIS (PROPRIETÁRIO)
     // ========================================================
     document.getElementById('btnOpenPdf').addEventListener('click', async () => {
       if (!isAdminUnlocked) return;
@@ -1193,59 +1197,111 @@
       return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     }
 
-    // Desenha pino circular HD nítido com ícone + número grande
-    function drawCrispHdPin(ctx, x, y, indexNumber, point) {
-      let color = '#059669'; // Verde Energia
-      if (point.type === 'usina') color = '#d97706'; // Âmbar Usina
-      else if (point.type === 'aluguel') color = '#2563eb'; // Azul Casa
-      else if (point.type === 'software') color = '#7c3aed'; // Roxo Software
+    // Desenha a seta/gota vetorial idêntica ao mapa (Raio, Sol, Casa, Hardware) + Etiqueta #Nº acima
+    function drawOriginalTeardropPin(ctx, x, y, indexNumber, point) {
+      const pinColor = getPointPinColor(point);
 
       ctx.save();
 
+      // Escala vetorial 1.35x sobre o viewBox 38x48 (ponta inferior exata em (x, y))
+      const scale = 1.35;
+      const pinW = 38 * scale; // 51.3 px
+      const pinH = 48 * scale; // 64.8 px
+      const originX = x - pinW / 2;
+      const originY = y - pinH;
+
       // Sombra projetada nítida
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
-      ctx.shadowBlur = 14;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.72)';
+      ctx.shadowBlur = 12;
       ctx.shadowOffsetY = 5;
 
-      // Ponteiro inferior no ponto GPS exato (x, y)
-      const r = 24;
-      const centerY = y - 34;
+      // 1. Corpo da seta/gota usando o Path2D exato do SVG original
+      ctx.save();
+      ctx.translate(originX, originY);
+      ctx.scale(scale, scale);
 
-      ctx.beginPath();
-      ctx.moveTo(x - 12, centerY + 18);
-      ctx.lineTo(x, y);
-      ctx.lineTo(x + 12, centerY + 18);
-      ctx.closePath();
-      ctx.fillStyle = color;
-      ctx.fill();
+      const teardropPath = new Path2D('M19 0C8.506 0 0 8.506 0 19C0 31.4 19 48 19 48C19 48 38 31.4 38 19C38 8.506 29.494 0 19 0Z');
+      ctx.fillStyle = pinColor;
+      ctx.fill(teardropPath);
 
-      // Círculo principal
-      ctx.beginPath();
-      ctx.arc(x, centerY, r, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.lineWidth = 4;
+      // Contorno branco fino para destacar no satélite
+      ctx.shadowColor = 'transparent';
+      ctx.lineWidth = 1.6;
       ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
+      ctx.stroke(teardropPath);
+
+      // 2. Círculo interno escuro (#0f172a)
+      ctx.beginPath();
+      ctx.arc(19, 18, 12, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+
+      // 3. Ícone interno exato (translate(7, 6) scale(0.9) no viewBox 24x24)
+      ctx.translate(7, 6);
+      ctx.scale(0.9, 0.9);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (point.type === 'cliente') {
+        // RAIO DE ENERGIA (zap)
+        const zap = new Path2D('M13 10V3L4 14h7v7l9-11h-7z');
+        ctx.stroke(zap);
+      } else if (point.type === 'usina') {
+        // SOL DE USINA (sun)
+        const sunRays = new Path2D('M12 3v2m0 14v2m9-9h-2M5 12H3m15.364-6.364l-1.414 1.414M7.05 16.95l-1.414 1.414M18.364 18.364l-1.414-1.414M7.05 7.05L5.636 5.636');
+        ctx.stroke(sunRays);
+        ctx.beginPath();
+        ctx.arc(12, 12, 4, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (point.type === 'aluguel') {
+        // CASA DE ALUGUEL (home)
+        const home = new Path2D('M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 001 1m-6 0h6');
+        ctx.stroke(home);
+      } else if (point.type === 'software') {
+        // HARDWARE / CHIP DE LICENÇA FLOWNEST (cpu)
+        ctx.strokeRect(5, 5, 14, 14);
+        ctx.strokeRect(9, 9, 6, 6);
+        const pins = new Path2D('M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3');
+        ctx.stroke(pins);
+      }
+
+      ctx.restore();
+
+      // 4. Etiqueta numérica compacta (#1, #2...) logo acima da seta para não tampar o ícone
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetY = 2;
+
+      const label = `#${indexNumber}`;
+      ctx.font = '800 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      const pillW = Math.max(30, ctx.measureText(label).width + 12);
+      const pillH = 20;
+      const pillX = x - pillW / 2;
+      const pillY = originY - pillH - 3;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.roundRect(pillX, pillY, pillW, pillH, 6);
+      ctx.fill();
 
       ctx.shadowColor = 'transparent';
+      ctx.lineWidth = 1.8;
+      ctx.strokeStyle = pinColor;
+      ctx.stroke();
 
-      // Número grande e ultra legível dentro do círculo
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`${indexNumber}`, x, centerY + 1);
+      ctx.fillText(label, x, pillY + pillH / 2 + 0.5);
 
       ctx.restore();
     }
 
     // Desenha etiqueta de ponto rural na borda quando o zoom urbano estiver ativo
     function drawOffscreenRuralIndicator(ctx, width, height, x, y, indexNumber, point, distKm) {
-      let color = '#059669';
-      if (point.type === 'usina') color = '#d97706';
-      else if (point.type === 'aluguel') color = '#2563eb';
-      else if (point.type === 'software') color = '#7c3aed';
+      const color = getPointPinColor(point);
 
       const pad = 28;
       const clampedX = Math.max(pad + 95, Math.min(width - pad - 95, x));
@@ -1257,16 +1313,16 @@
       ctx.shadowColor = 'rgba(0,0,0,0.65)';
       ctx.shadowBlur = 10;
 
-      ctx.font = 'bold 17px sans-serif';
-      const boxW = ctx.measureText(label).width + 32;
-      const boxH = 34;
+      ctx.font = 'bold 16px sans-serif';
+      const boxW = ctx.measureText(label).width + 30;
+      const boxH = 32;
 
       ctx.fillStyle = '#0f172a';
       ctx.beginPath();
       ctx.roundRect(clampedX - boxW / 2, clampedY - boxH / 2, boxW, boxH, 10);
       ctx.fill();
 
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 2.5;
       ctx.strokeStyle = color;
       ctx.stroke();
 
@@ -1282,16 +1338,13 @@
       const stage = document.getElementById('pdfRenderStage');
       stage.innerHTML = '<div id="hdMapContainer" style="width:1600px;height:880px;"></div>';
 
-      // Decide quais pontos entram no enquadramento principal
       let focusItems = [...cityItems];
       if (zoomMode === 'SMART_URBAN' && cityItems.length >= 3) {
-        // Calcula mediana das coordenadas para achar o centro urbano
         const lats = cityItems.map(p => p.lat).sort((a, b) => a - b);
         const lngs = cityItems.map(p => p.lng).sort((a, b) => a - b);
         const medLat = lats[Math.floor(lats.length / 2)];
         const medLng = lngs[Math.floor(lngs.length / 2)];
 
-        // Pontos dentro de 5.5 km do núcleo urbano
         const urbanCluster = cityItems.filter(p => haversineKm(medLat, medLng, p.lat, p.lng) <= 5.5);
         if (urbanCluster.length >= 2) {
           focusItems = urbanCluster;
@@ -1321,7 +1374,7 @@
             const bounds = new maplibregl.LngLatBounds();
             focusItems.forEach(p => bounds.extend([p.lng, p.lat]));
             hdMap.fitBounds(bounds, {
-              padding: { top: 95, bottom: 95, left: 110, right: 110 },
+              padding: { top: 105, bottom: 95, left: 110, right: 110 },
               maxZoom: 16.2,
               animate: false
             });
@@ -1345,12 +1398,11 @@
       outCanvas.height = 880;
       const ctx = outCanvas.getContext('2d');
 
-      // Copia o satélite 1:1 (zero esticamento)
       ctx.drawImage(glCanvas, 0, 0, 1600, 880);
 
       const centerCoord = hdMap.getCenter();
 
-      // Ordena desenho para que pinos mais ao norte sejam desenhados antes dos mais ao sul (efeito profundidade correto)
+      // Ordena do norte para o sul para sobreposição natural das setas
       const indexedItems = cityItems.map((p, idx) => ({ point: p, num: idx + 1 }));
       indexedItems.sort((a, b) => b.point.lat - a.point.lat);
 
@@ -1359,7 +1411,7 @@
         const isInside = pt.x >= 20 && pt.x <= 1580 && pt.y >= 45 && pt.y <= 865;
 
         if (isInside) {
-          drawCrispHdPin(ctx, pt.x, pt.y, num, point);
+          drawOriginalTeardropPin(ctx, pt.x, pt.y, num, point);
         } else {
           const distKm = haversineKm(centerCoord.lat, centerCoord.lng, point.lat, point.lng);
           drawOffscreenRuralIndicator(ctx, 1600, 880, pt.x, pt.y, num, point, distKm);
@@ -1371,6 +1423,15 @@
       stage.innerHTML = '';
 
       return dataUrl;
+    }
+
+    function hexToRgbArray(hex) {
+      const clean = hex.replace('#', '');
+      return [
+        parseInt(clean.substring(0, 2), 16),
+        parseInt(clean.substring(2, 4), 16),
+        parseInt(clean.substring(4, 6), 16)
+      ];
     }
 
     document.getElementById('btnGeneratePdfA4').addEventListener('click', async () => {
@@ -1431,15 +1492,13 @@
 
         for (let cIdx = 0; cIdx < cityNames.length; cIdx++) {
           const cityName = cityNames[cIdx];
-          // Ordena os itens por tipo (Energia -> Imóvel -> Software -> Usina) para legenda limpa
           const typeOrder = { cliente: 1, aluguel: 2, software: 3, usina: 4 };
           const cityItems = [...cityMap[cityName]].sort((a, b) => (typeOrder[a.type] || 9) - (typeOrder[b.type] || 9));
 
-          progressBox.innerText = `Gerando mapa HD (${cIdx + 1}/${cityNames.length}): ${cityName}...`;
+          progressBox.innerText = `Gerando mapa HD com setas (${cIdx + 1}/${cityNames.length}): ${cityName}...`;
 
           if (cIdx > 0) doc.addPage('a4', 'portrait');
 
-          // Captura imagem HD na proporção exata 1600x880 (186mm x 102.3mm)
           const mapPngUrl = await captureHighResCityMap(cityItems, zoomMode);
 
           // --- 1. CABEÇALHO EXECUTIVO ---
@@ -1516,7 +1575,7 @@
             doc.text(k.val, kx + 3, kpiY + 10.8);
           });
 
-          // --- 3. IMAGEM DO MAPA HD (PROPORÇÃO EXATA 1600:880 -> 186mm x 102.3mm) ---
+          // --- 3. IMAGEM DO MAPA HD COM AS SETAS ---
           const mapBoxY = 51.5;
           const mapBoxH = 102.3;
           doc.setDrawColor(100, 116, 139);
@@ -1524,30 +1583,30 @@
           doc.rect(margin, mapBoxY, contentW, mapBoxH);
           doc.addImage(mapPngUrl, 'PNG', margin, mapBoxY, contentW, mapBoxH);
 
-          // --- 4. BARRA DE CÓDIGO DE CORES ---
+          // --- 4. BARRA DE CÓDIGO DOS SÍMBOLOS DAS SETAS ---
           const keyY = mapBoxY + mapBoxH + 2;
           doc.setFillColor(241, 245, 249);
           doc.roundedRect(margin, keyY, contentW, 7.5, 1.5, 1.5, 'F');
 
           const legendKeys = [
-            { label: 'Energia Solar', rgb: [5, 150, 105] },
-            { label: 'Aluguel de Casa', rgb: [37, 99, 235] },
-            { label: 'Software FlowNest', rgb: [124, 58, 237] },
-            { label: 'Usina Geradora', rgb: [217, 119, 6] }
+            { label: 'Raio: Energia Solar', rgb: [16, 185, 129] },
+            { label: 'Sol: Usina Geradora', rgb: [245, 158, 11] },
+            { label: 'Casa: Aluguel Imóvel', rgb: [59, 130, 246] },
+            { label: 'Hardware: FlowNest IA', rgb: [139, 92, 246] }
           ];
 
-          let keyCursorX = margin + 5;
+          let keyCursorX = margin + 4;
           legendKeys.forEach(lk => {
             doc.setFillColor(...lk.rgb);
             doc.circle(keyCursorX + 2, keyY + 3.75, 2.1, 'F');
             doc.setTextColor(30, 41, 59);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(7.5);
-            doc.text(lk.label, keyCursorX + 6, keyY + 4.8);
-            keyCursorX += 46;
+            doc.setFontSize(7.3);
+            doc.text(lk.label, keyCursorX + 5.5, keyY + 4.8);
+            keyCursorX += 46.2;
           });
 
-          // --- 5. TABELA LEGENDA COMPLETA (SEM CORTAR TEXTOS) ---
+          // --- 5. TABELA LEGENDA COMPLETA ---
           let tableY = keyY + 11;
           doc.setTextColor(15, 23, 42);
           doc.setFont('helvetica', 'bold');
@@ -1562,10 +1621,10 @@
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(7.2);
-            doc.text('PINO', margin + 6.5, yPos + 4.7, { align: 'center' });
-            doc.text('CATEGORIA', margin + 15, yPos + 4.7);
-            doc.text('CLIENTE / IDENTIFICAÇÃO', margin + 48, yPos + 4.7);
-            doc.text('O QUE ALUGA / DETALHES COMPLETOS', margin + 102, yPos + 4.7);
+            doc.text('SETA', margin + 6.5, yPos + 4.7, { align: 'center' });
+            doc.text('SÍMBOLO / TIPO', margin + 15, yPos + 4.7);
+            doc.text('CLIENTE / IDENTIFICAÇÃO', margin + 50, yPos + 4.7);
+            doc.text('O QUE ALUGA / DETALHES COMPLETOS', margin + 104, yPos + 4.7);
             doc.text('MENSALIDADE', pageW - margin - 3, yPos + 4.7, { align: 'right' });
             return yPos + 7;
           };
@@ -1573,38 +1632,34 @@
           tableY = drawTableHeader(tableY);
 
           cityItems.forEach((item, idx) => {
-            let tipoTexto = 'Energia Solar';
-            let badgeRgb = [5, 150, 105];
+            const hexColor = getPointPinColor(item);
+            const badgeRgb = hexToRgbArray(hexColor);
+            let tipoTexto = 'Raio • Energia';
             let detalheTexto = '';
             let valorTexto = '';
 
             if (item.type === 'cliente') {
-              tipoTexto = 'Energia Solar';
-              badgeRgb = [5, 150, 105];
+              tipoTexto = 'Raio • Energia';
               const fin = computeFinances(item.kwh || 0, item.locationType !== 'rural');
               detalheTexto = `Crédito Solar • ${item.kwh || 0} kWh/mês${item.sourceUsina ? ` • Usina: ${item.sourceUsina}` : ''}`;
               valorTexto = formatBRL(fin.faturamentoBruto);
             } else if (item.type === 'aluguel') {
-              tipoTexto = 'Aluguel Casa';
-              badgeRgb = [37, 99, 235];
+              tipoTexto = 'Casa • Imóvel';
               detalheTexto = `Imóvel Residencial/Comercial • Status: ${item.status || 'Alugada'}`;
               valorTexto = formatBRL(item.val || 0);
             } else if (item.type === 'software') {
-              tipoTexto = 'FlowNest IA';
-              badgeRgb = [124, 58, 237];
+              tipoTexto = 'Chip • FlowNest';
               detalheTexto = `Licença de Software IA • Status: ${item.status || 'Ativa'}`;
               valorTexto = formatBRL(item.val || 0);
             } else if (item.type === 'usina') {
-              tipoTexto = 'Usina Solar';
-              badgeRgb = [217, 119, 6];
+              tipoTexto = 'Sol • Usina';
               detalheTexto = `Geração (${item.ownership === 'Sociedade' ? 'Sociedade' : 'Própria'}) • ${item.kwh || 0} kWh/mês`;
               valorTexto = 'Geração';
             }
 
-            // Quebra inteligente de linha para nunca cortar palavras
             doc.setFontSize(7.5);
             const nameLines = doc.splitTextToSize(item.name || '-', 51);
-            const detailLines = doc.splitTextToSize(detalheTexto, 63);
+            const detailLines = doc.splitTextToSize(detalheTexto, 61);
             const maxLines = Math.max(nameLines.length, detailLines.length);
             const rowH = Math.max(7.2, maxLines * 3.8 + 3.2);
 
@@ -1619,29 +1674,31 @@
             doc.setLineWidth(0.25);
             doc.rect(margin, tableY, contentW, rowH, 'FD');
 
-            // Círculo colorido com o número do pino igual ao mapa
-            doc.setFillColor(...badgeRgb);
-            doc.circle(margin + 6.5, tableY + rowH / 2, 2.8, 'F');
+            // Plaquinha numérica #1, #2... com a cor exata da seta no mapa
+            doc.setFillColor(15, 23, 42);
+            doc.setDrawColor(...badgeRgb);
+            doc.setLineWidth(0.4);
+            doc.roundedRect(margin + 2, tableY + (rowH - 4.8) / 2, 9, 4.8, 1, 1, 'FD');
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(7.2);
-            doc.text(`${idx + 1}`, margin + 6.5, tableY + rowH / 2 + 0.9, { align: 'center' });
+            doc.setFontSize(7);
+            doc.text(`#${idx + 1}`, margin + 6.5, tableY + rowH / 2 + 0.8, { align: 'center' });
 
-            // Categoria
+            // Símbolo / Tipo
             doc.setTextColor(...badgeRgb);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(7.5);
             doc.text(tipoTexto, margin + 15, tableY + 4.8);
 
-            // Cliente (com quebra de linha limpa)
+            // Cliente
             doc.setTextColor(15, 23, 42);
             doc.setFont('helvetica', 'bold');
-            doc.text(nameLines, margin + 48, tableY + 4.8);
+            doc.text(nameLines, margin + 50, tableY + 4.8);
 
-            // Detalhes completos (com quebra de linha limpa)
+            // Detalhes completos
             doc.setTextColor(51, 65, 85);
             doc.setFont('helvetica', 'normal');
-            doc.text(detailLines, margin + 102, tableY + 4.8);
+            doc.text(detailLines, margin + 104, tableY + 4.8);
 
             // Valor Mensal
             doc.setTextColor(15, 23, 42);
@@ -1812,12 +1869,15 @@
           .then(reg => console.log('SW registrado:', reg.scope))
           .catch(() => {
             const swCode = `
-              const CACHE_NAME = 'solar-flownest-v3';
+              const CACHE_NAME = 'solar-flownest-v4';
               self.addEventListener('install', (e) => {
                 self.skipWaiting();
               });
               self.addEventListener('activate', (e) => {
-                e.waitUntil(clients.claim());
+                e.waitUntil(
+                  caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+                    .then(() => clients.claim())
+                );
               });
               self.addEventListener('fetch', (e) => {
                 if (e.request.method !== 'GET') return;
